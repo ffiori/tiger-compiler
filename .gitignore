@@ -4,6 +4,7 @@ tigergrm.sig
 tigergrm.sml
 tigerlex.sml
 tigermain
+tiger
 *.ui
 *.uo
 errlist
