@@ -56,12 +56,13 @@ fun tiposIguales (TRecord _) TNil = true
   | tiposIguales (TRecord (_, u1)) (TRecord (_, u2)) = (u1=u2)
   | tiposIguales (TArray (_, u1)) (TArray (_, u2)) = (u1=u2)
   | tiposIguales (TInt _) (TInt _) = true
-  | tiposIguales (TTipo _) b = raise Fail "No debería pasar! (1)"
-  | tiposIguales a (TTipo _) = raise Fail "No debería pasar! (2)"
+  | tiposIguales (TTipo _) b = raise Fail "No debería pasar! Comparando TTipo (1)"
+  | tiposIguales a (TTipo _) = raise Fail "No debería pasar! Comparando TTipo (2)"
   | tiposIguales a b = (a=b)
 
 fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
 
+(* FEFO: ojo, si se comparan TInt a y TInt b devuelve TInt a. Puede no ser conmutativo. *)
 fun cmpTipo(t1,t2,nl) = if tiposIguales t1 t2 then t1 else error("Tipos distintos en cmpTipo!",nl)
 
 fun transExp(venv, tenv) =
