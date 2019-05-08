@@ -77,7 +77,7 @@ fun transExp(venv, tenv) =
 		            SOME (Func f) => f
 		            | _ => error (func^" no es función o no está siendo definida en este batch.",nl)
 	            val lteargs = List.map trexp args
-	            val ltexps = List.map (#exp) lteargs
+	            val ltexps = List.map (fn (T x) => x) (List.map (#exp) lteargs)
 	            val ltargs = List.map (#ty) lteargs
 	            val _ = if List.length targs = List.length ltargs then () else error("Función "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
 	            val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
