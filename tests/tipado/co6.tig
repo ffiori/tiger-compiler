@@ -1,0 +1,7 @@
+let
+	type tree = {key:int, children : treelist}
+	type treelist = {hd:tree, tl : treelist}
+	var r:treelist := treelist {hd = tree{key=10, children = treelist {hd = nil, tl = nil}}}
+in
+	r.hd.children.hd.key
+end

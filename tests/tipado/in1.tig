@@ -1,0 +1,7 @@
+let
+	type A = B
+	type B = A
+	type C = {i:int, next:A}
+in 
+	0
+end

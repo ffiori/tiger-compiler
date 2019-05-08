@@ -1,0 +1,14 @@
+let
+	type A = B
+	type B = C
+	type C = {i:int, next:A}
+	var ra : A := nil
+	var rb : B := nil
+	var rc : C := nil
+in 
+	ra := rb;
+	ra := rc;
+	rb := rc;
+	0
+end
+

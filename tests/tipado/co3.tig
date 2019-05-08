@@ -1,0 +1,9 @@
+let
+	type R = {i:int}
+	var x:= 0
+	type T = R
+	var y:= 1
+	type A = array of R
+in 
+	0
+end

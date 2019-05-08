@@ -1,0 +1,8 @@
+let
+	type A = B
+	type B = C
+	type C = {i:int, next: A}
+	type Arr = array of A
+in 
+	0
+end

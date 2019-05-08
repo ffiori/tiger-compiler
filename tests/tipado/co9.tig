@@ -1,0 +1,6 @@
+let
+	type A = B
+	type B = {next:B}
+in 
+	0
+end

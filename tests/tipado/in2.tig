@@ -1,0 +1,6 @@
+let
+	type R = {h:int, i:int, j:string}
+	var r:= R {i = 10, h = 11, j = 12}
+in 
+	0
+end

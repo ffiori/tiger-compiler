@@ -1,0 +1,8 @@
+let
+	type R1 = {i:int, next: R2}
+	type R2 = {i:int, next: R1}
+	type A = array of R1
+	var a:= A[10] of R1{i = 10, next = R2 {i = 11, next = R1 {i = 12, next = nil}}}
+in
+	a[5].next.next.next.next.next.next.next.next.i
+end
