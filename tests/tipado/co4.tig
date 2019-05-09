@@ -1,6 +1,6 @@
 let
 	type R = {i:int, j:int, k:int}
-	var r:= R {i = 10, h = 11, j = 12}
+	var r:= R {i = 10, k = 11, j = 12}
 in 
 	r.i := 10;
 	r.j := 10;
