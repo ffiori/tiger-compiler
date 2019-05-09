@@ -62,8 +62,15 @@ fun tiposIguales (TRecord _) TNil = true
 
 fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
 
-(* FEFO: ojo, si se comparan TInt a y TInt b devuelve TInt a. Puede no ser conmutativo. *)
-fun cmpTipo(t1,t2,nl) = if tiposIguales t1 t2 then t1 else error("Tipos distintos en cmpTipo!",nl)
+(* Compara tipos y si son compatibles devuelve el tipo más restrictivo 
+ * al que tipan los dos. *)
+fun cmpTipo(TNil, (TRecord r), _) = (TRecord r)
+  | cmpTipo((TRecord r), TNil, _) = (TRecord r)
+  | cmpTipo((TInt RO), (TInt RW), _) = (TInt RO) (* TODO FEFO: check *)
+  | cmpTipo((TInt RW), (TInt RO), _) = (TInt RO) (* TODO FEFO: check *)
+  | cmpTipo(t1, t2, nl) = if tiposIguales t1 t2 
+                          then t1
+                          else error("Tipos distintos en cmpTipo!",nl)
 
 fun transExp(venv, tenv) =
 	let fun trexp(VarExp v) = trvar(v)
@@ -167,7 +174,10 @@ fun transExp(venv, tenv) =
 			    val {exp=T elseexp, ty=tyelse} = trexp else'
 			in
 				case (tipoReal(tytest,tenv), tiposIguales tythen tyelse) of 
-				    (TInt _, true) => {exp=T (if tipoReal(tythen,tenv)=TUnit then ifThenElseExpUnit {test=testexp,then'=thenexp,else'=elseexp} else ifThenElseExp {test=testexp,then'=thenexp,else'=elseexp}), ty=tythen}
+				    (TInt _, true) => {exp=T (if tipoReal(tythen,tenv)=TUnit
+                                              then ifThenElseExpUnit {test=testexp,then'=thenexp,else'=elseexp}
+                                              else ifThenElseExp {test=testexp,then'=thenexp,else'=elseexp}),
+                                       ty=cmpTipo(tythen,tyelse,nl)}
 				    |_ => error("Error de tipos en ifThenElse" ,nl)
 			end
 		| trexp(IfExp({test, then', else'=NONE}, nl)) =
