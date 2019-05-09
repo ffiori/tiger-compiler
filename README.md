@@ -7,6 +7,10 @@ the Computer Science degree at Universidad Nacional de Rosario.
 TODO
 
 - Hacer script para automatizar testeos.
+- Asegurarse de que todos los tests devuelvan lo que deben.
+- Implementar expresiones además del tipado. tigerseman.sml.
+- Testear código intermedio. Tenemos que encontrar una forma de hacer esto.
+- Sacarse de encima el tipo 'pirulo'. Sacarse de encima SCAF.
 
 DONE
 
