@@ -66,7 +66,7 @@ Ejemplos:
 let
 	type A = B
 	type B = A
-	type C = {i:int, next = A}
+	type C = {i:int, next: A}
 in 
 	0
 end
@@ -75,21 +75,21 @@ end
 let
 	type A = B
 	type B = C
-	type C = {i:int, next = A}
-	var ra:a := nil
-	var rb:b := nil
-	var rc:c := nil
+	type C = {i:int, next: A}
+	var ra:A := nil
+	var rb:B := nil
+	var rc:C := nil
 in 
-	ra := rb
-	ra := rc
-	rb := rc
+	ra := rb;
+	ra := rc;
+	rb := rc;
 	0
 end
 
 3) (* correcto *)
 let
 	type R = {h:int, i:int, j:string, k:R}
-	var r:= R {i = ord ("A"), h = 34, j = "hola", k = nil)
+	var r:= R {i = ord ("A"), h = 34, j = "hola", k = nil}
 in 
 	0
 end
@@ -97,7 +97,7 @@ end
 4) (* incorrecto *)
 let
 	type R = {h:int, i:int, j:string}
-	var r:= R {i = 10, h = 11, j = 12)
+	var r:= R {i = 10, h = 11, j = 12}
 in 
 	0
 end
@@ -105,9 +105,9 @@ end
 5) (* correcto *)
 let
 	type R = {i:int}
-	var x:= 0
+	var x := 0
 	type T = R
-	var y:= 1
+	var y := 1
 	type A = array of R
 in 
 	0
@@ -116,7 +116,7 @@ end
 6) (* correcto *)
 let
 	type R = {i:int, j:int, k:int}
-	var r:= R {i = 10, h = 11, j = 12)
+	var r := R {i = 10, h = 11, j = 12}
 in 
 	r.i := 10;
 	r.j := 10;
@@ -126,28 +126,28 @@ end
 
 7) (* correcto *)
 let
-	type R1 = {i:int, next = R2}
-	type R2 = {i:int, next = R1}
+	type R1 = {i:int, next: R2}
+	type R2 = {i:int, next: R1}
 	var r:R1 := R1{i = 10, next = R2 {i = 11, next = R1 {i = 12, next = nil}}}
 in
 	0
 end
 
-8) (* correcto *)
+8) (* correcto (sólo el tipado) *)
 let
-	type tree = {key:int, children : treelist}
-	type treelist = {hd:tree, tl = treelist}
-	var r:treelist{hd = tree{key=10, children = treelist {hd = nil, tl = nil}}}
+	type tree = {key:int, children:treelist}
+	type treelist = {hd:tree, tl:treelist}
+	var r:treelist := treelist{hd = tree{key=10, children = treelist {hd = nil, tl = nil}}}
 in
 	r.hd.children.hd.key
 end
 
-9) (* correcto *)
+9) (* correcto (sólo el tipado) *)
 let
-	type R1 = {i:int, next = R2}
-	type R2 = {i:int, next = R1}
+	type R1 = {i:int, next:R2}
+	type R2 = {i:int, next:R1}
 	type A = array of R1
-	var a:= A[10] of {i = 10, next = R2 {i = 11, next = R1 {i = 12, next = nil}}}
+	var a:= A[10] of R1 {i = 10, next = R2 {i = 11, next = R1 {i = 12, next = nil}}}
 in
 	a[5].next.next.next.next.next.next.next.next.i
 end
@@ -156,7 +156,7 @@ end
 let
 	type A = B
 	type B = C
-	type C = {i:int, next = A}
+	type C = {i:int, next:A}
 	type Arr = array of A
 in 
 	0
