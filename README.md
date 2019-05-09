@@ -8,3 +8,5 @@ TODO
 
 - tests/tipado/in3.tig no anda. Toma a R1 como TNil, entonces cuando lo
 compara con R2 que es TRecord da que son iguales.
+
+- Hacer script para automatizar testeos.

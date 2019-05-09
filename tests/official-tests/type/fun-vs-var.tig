@@ -1,0 +1,10 @@
+/* error : a is not a variable, it's a function */
+
+let
+   type a = int
+   var a : a := 2
+   function a (a : a) : a = a
+in
+   /* Should fail, there are only two name spaces: one for functions and variables, and one for types. So a is only a function and a type, not a variable. */
+   a (a + a); 0
+end
