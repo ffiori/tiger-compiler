@@ -26,7 +26,7 @@ and exp = VarExp of var * pos
 	| ArrayExp of {typ: symbol, size: exp, init: exp} * pos (* type A=array of int
                                                                    var b:=A[10] of 7 *)
 
-and dec = FunctionDec of ({name: symbol, params: field list, result: symbol option, body: exp} * pos) list
+and dec = FunctionDec of ({name: symbol, params: field list, result: symbol option, body: exp} * pos) list (* batch de declaraciones de funciones *)
         | VarDec of {name: symbol,
                      escape: bool ref,
                      typ: symbol option, (* viene en none si no se tipó estáticamente la expresión. Sería como el auto en c++. *)
