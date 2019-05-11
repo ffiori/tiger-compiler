@@ -61,6 +61,7 @@ fun tiposIguales (TRecord _) TNil = true
   | tiposIguales a b = (a=b)
 
 fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+fun errorNoLine(s) = raise Fail ("Error: "^s^"\n")
 
 (* Compara tipos y si son compatibles devuelve el tipo más restrictivo 
  * al que tipan los dos. *)
@@ -346,7 +347,7 @@ fun transExp(venv, tenv) =
                         ({name="",ty=NameTy ""},0) (* Invento un tipo con nombre "" que no va a ser igual a ninguno de los que se definan. *)
                         sortedNames
                 val ltsinpos = List.map (fn (x,pos) => x) lt
-                val tenv' = tigertopsort.fijaTipos ltsinpos tenv
+                val tenv' = tigertopsort.fijaTipos ltsinpos tenv handle Ciclo => errorNoLine("Ciclo en la declaración de tipos!")
             in transDec(venv,tenv',el,ts) end
 
         (* transTy (tenv, ty : ty, nl) : Tipo *)
