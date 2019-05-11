@@ -1,0 +1,9 @@
+let
+	type R1 = {i:int}
+	var r1:R1:=nil
+	type R2 = {i:int}
+	var r2:R2:=nil
+in
+	r1 :=  r2;
+	0
+end

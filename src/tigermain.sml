@@ -31,7 +31,7 @@ fun main(args) =
 		val _ = if arbol then tigerpp.exprAst expr else ()
 	in
 		transProg(expr);
-		print "yes!!\n"
-	end	handle Fail s => print("Fail: "^s^"\n")
+		print "Success!\n"
+	end	handle Fail s => print("Fail: "^s)
 
 val _ = main(CommandLine.arguments())
