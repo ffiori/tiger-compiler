@@ -1,0 +1,11 @@
+/* misuse reserved word */
+
+let
+	type R = {i:int, j:int, k:int}
+	var r:= R {i = 10, j = 11, k = let}
+in
+	r.i := 10;
+	r.j := 10;
+	r.k := 10;
+	0
+end

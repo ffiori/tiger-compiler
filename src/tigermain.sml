@@ -8,7 +8,7 @@ fun lexstream(is: instream) =
 	Lexing.createLexer(fn b => fn n => buff_input is b 0 n);
 fun errParsing(lbuf) = (print("Error en parsing!("
 	^(makestring(!num_linea))^
-	")["^(Lexing.getLexeme lbuf)^"]\n"); raise Fail "fin!")
+	")["^(Lexing.getLexeme lbuf)^"]\n"); raise Fail "Parse error")
 fun main(args) =
 	let	fun arg(l, s) =
 			(List.exists (fn x => x=s) l, List.filter (fn x => x<>s) l)
@@ -31,7 +31,7 @@ fun main(args) =
 		val _ = if arbol then tigerpp.exprAst expr else ()
 	in
 		transProg(expr);
-		print "Success!\n"
+		print "Success\n"
 	end	handle Fail s => print("Fail: "^s)
 
 val _ = main(CommandLine.arguments())

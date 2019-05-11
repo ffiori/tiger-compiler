@@ -1,0 +1,12 @@
+/* declare a type outside let */
+
+let
+	type R = {i:int, j:int, k:int}
+	var r:= R {i = 10, j = 11, k = 3}
+in
+	r.i := 10;
+	r.j := 10;
+	r.k := 10;
+	type S = {i:int, j:int, k:int}
+	0
+end

@@ -1,0 +1,9 @@
+/* do not use let */
+type A = B
+type B = A
+type C = {i:int, next:A}
+0
+
+
+
+

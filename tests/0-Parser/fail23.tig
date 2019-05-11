@@ -1,0 +1,7 @@
+/* misuse of operators */
+let
+	type R = {h:int, i:int, j:string, k:R}
+	var r := R {h = ord ("A"), i = 34, j = "hola", k = nil}
+in
+	-r -
+end

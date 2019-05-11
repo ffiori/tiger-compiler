@@ -1,0 +1,6 @@
+/* type nil? */
+let
+	type nil = nil
+in
+	0
+end

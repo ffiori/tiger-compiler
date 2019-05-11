@@ -1,0 +1,10 @@
+/*incomplete declaration*/
+let
+	type R = {i:int}
+	var x:= 0
+	type T = R
+	var y:= 1
+	type A
+in 
+	0
+end
