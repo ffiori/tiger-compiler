@@ -182,7 +182,7 @@ fun transExp(venv, tenv) =
                                               then ifThenElseExpUnit {test=testexp,then'=thenexp,else'=elseexp}
                                               else ifThenElseExp {test=testexp,then'=thenexp,else'=elseexp}),
                                        ty=cmpTipo(tythen,tyelse,nl)}
-				    |_ => error("Error de tipos en ifThenElse" ,nl)
+				    |_ => error("Error de tipos en ifThenElse o en operacion logica & o |" ,nl)
 			end
 		| trexp(IfExp({test, then', else'=NONE}, nl)) =
 			let val {exp=T exptest,ty=tytest} = trexp test
