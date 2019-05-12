@@ -1,0 +1,7 @@
+/* while cannot return a value  */
+
+let
+	var true:int := 1
+in
+	while true do "Estoy retornando este string!"
+end

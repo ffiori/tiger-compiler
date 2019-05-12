@@ -1,0 +1,9 @@
+/* operations with strings */
+
+let
+
+in
+	"bien">"mal";
+	"bien"<>"mal";
+	0
+end

@@ -1,0 +1,22 @@
+/* :) */
+
+let
+	type A = int
+	type B = {a1:A, a2:A}
+	type BB = {b1:B}
+	type BC = {b1:B, c1:CC}
+	type C = array of string
+	type CC = array of C
+	type CB = array of B
+
+	var a:A := 5
+	var b:B := B {a1=a, a2=a}
+	var c:C := C[4] of "z"
+	var bb:BB := BB {b1=b}
+	var cc:CC := CC[12] of c
+	
+in 
+    a := bb.b1.a2 + 4;
+    a := if c[0]="z" then 24 else b.a2;
+    0
+end

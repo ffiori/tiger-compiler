@@ -1,0 +1,10 @@
+/* a let expression with nothing betwheen in and end yields no value */
+
+let
+
+in
+	let
+	in 
+	end;
+	0 /* if you remove this, it will complain because let it end returns no value */
+end

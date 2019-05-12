@@ -1,0 +1,7 @@
+/* nil variable must have a long declaration */
+
+let
+    var s := nil
+in 
+    0
+end

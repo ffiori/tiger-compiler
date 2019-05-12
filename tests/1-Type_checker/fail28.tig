@@ -1,0 +1,10 @@
+/* standard library incorrect arguments */
+
+let 
+	type A = array of int
+	var a:A :=  A[2] of 2
+in
+	print(a);
+	0
+end
+

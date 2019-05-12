@@ -1,0 +1,10 @@
+/* variables and functions share the same namespace */
+
+let
+    var a:int := 5
+    function a() = print("hey")
+    
+    var s:int := a /* a is no longer a variable */
+in 
+    0
+end

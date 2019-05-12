@@ -1,0 +1,8 @@
+/* scope of function argument */
+
+let
+    function f(i:int) = g()
+    function g() = print("hola")
+in 
+    i 
+end

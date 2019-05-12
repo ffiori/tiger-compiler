@@ -1,0 +1,10 @@
+/* Play with circular declarations */
+let
+	type D = C
+	type A = string
+	type B = int
+	type C = B
+
+in 
+	0
+end

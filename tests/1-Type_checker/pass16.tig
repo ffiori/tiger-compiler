@@ -1,0 +1,7 @@
+/* function and procedure decl */
+let
+    function f(i:int):string = "hey"
+    function k(i:int) = print("hola")
+in 
+    0 
+end

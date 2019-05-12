@@ -1,0 +1,7 @@
+/* for cannot return a value  */
+
+let
+	var a:int := 1
+in
+	for i:=a to a do "Estoy retornando este string!"
+end

@@ -1,0 +1,7 @@
+/* cannot redeclare function in the same batch */
+let
+    function f(i:int):string = "hey"
+    function f(i:int) = print("hola")
+in 
+    0 
+end

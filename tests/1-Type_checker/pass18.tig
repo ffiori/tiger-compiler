@@ -1,0 +1,8 @@
+/* dual namespace should work fine :) */
+
+let
+    type A = int
+    var A:A := 5
+in 
+    0
+end

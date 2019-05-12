@@ -1,0 +1,7 @@
+/* Record with no fields */
+let
+	type A = {}
+	type B = {}
+in 
+	0
+end

@@ -1,0 +1,9 @@
+/* Renamed type must be comparable */
+let
+	type A = { a: int, b:string , c: A}
+	type B = { a: int, b:string , c: A}
+	var a: A := nil
+	var b: B := a
+in 
+    0 
+end

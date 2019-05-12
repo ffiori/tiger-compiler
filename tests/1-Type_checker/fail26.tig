@@ -1,0 +1,7 @@
+/* break  */
+
+let
+	function f() = let in break; () end
+in
+	0
+end

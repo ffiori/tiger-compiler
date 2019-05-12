@@ -1,0 +1,7 @@
+/* standard library  */
+(
+print("hey!");
+flush();
+getchar();
+ord("wololo")
+)

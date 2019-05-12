@@ -1,0 +1,8 @@
+/* forbidden operation between strings*/
+
+let
+	var a :string := "hola"
+in
+	a+a;
+	0
+end

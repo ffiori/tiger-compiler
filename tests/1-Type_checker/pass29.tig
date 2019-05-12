@@ -1,0 +1,7 @@
+/* wtf*/
+
+let
+	type A = {a:Int}
+in
+	0
+end

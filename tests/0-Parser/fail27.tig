@@ -1,0 +1,8 @@
+/* illegal exp  */
+
+let
+
+in
+	1=2=3;
+	0
+end

@@ -1,0 +1,8 @@
+/* nil properties */
+
+let
+
+in 
+	if (nil=nil) then print("aprende a chequear los tipos bien bobo!");
+	0
+end

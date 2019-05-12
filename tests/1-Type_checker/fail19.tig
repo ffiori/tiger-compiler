@@ -1,0 +1,9 @@
+/* add records */
+
+let
+	type A = {a:int}
+	var a:A := A {a=2}
+in
+	a+a;
+	0
+end

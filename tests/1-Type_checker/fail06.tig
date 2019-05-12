@@ -1,0 +1,13 @@
+/* redefinition hides type*/
+let
+	type D = C
+	type A = string
+	type B = int
+	type C = B
+	var x:A := "hola"
+	var y:A := "man"
+	type A = int
+	var x:A := 5 
+in 
+	x+y
+end

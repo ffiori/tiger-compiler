@@ -1,0 +1,13 @@
+/* Types can be redefined if this happens in different batches */
+let
+	type D = C
+	type A = string
+	type B = int
+	type C = B
+	var x:A := "hola"
+	type A = int
+	var x:A := 5 
+
+in 
+	0
+end

@@ -1,0 +1,13 @@
+/* nil properties */
+
+let
+	type A = {a1 : int}
+	var a : A := nil
+	function f(p:A) = f(nil)
+in 
+    a := nil;
+    if (a<>nil) then ();
+    if (nil<>a) then ();
+    if a = nil then ();
+    0
+end

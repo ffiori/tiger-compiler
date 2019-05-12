@@ -1,0 +1,7 @@
+/* scope of function declaration*/
+let
+    function f(i:int) = g()
+    function g() = print("hola")
+in 
+    0 
+end

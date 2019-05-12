@@ -1,0 +1,11 @@
+/* Cannot declare the same type in a batch */
+let
+	type D = C
+	type A = string
+	type B = int
+	type C = B
+	type A = int
+
+in 
+	0
+end

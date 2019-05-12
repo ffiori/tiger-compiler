@@ -1,0 +1,8 @@
+/* escape character */
+
+let
+
+in
+	print("Hello I'm an escape character \n \t \" \\ ");
+	0
+end

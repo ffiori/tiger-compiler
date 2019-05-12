@@ -1,0 +1,9 @@
+/* if then cannot return a value  */
+
+let
+	function proc() = ()
+in
+	if "hola"<>"chau" then proc();
+	if "hola"="chau" then "happy ending!";
+	0
+end

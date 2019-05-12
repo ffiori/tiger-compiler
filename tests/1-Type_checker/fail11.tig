@@ -1,0 +1,9 @@
+/* scope of function argument */
+
+let
+    function f(i:string) = g()
+    function g() = print("hola")
+    var s : string := i
+in 
+    0
+end
