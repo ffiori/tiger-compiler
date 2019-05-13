@@ -1,0 +1,13 @@
+COSAS A TESTEAR CODIGO INTERMEDIO
+
+let
+	type A = {i:int}
+	var a1 : A := A{i=1}
+	var a2 : A := A{i=1}
+in 
+	a1=a2; /* tiene que dar falso */
+ 	a1=a1; /* tiene que dar true */
+end
+
+Usar binops en strings , ints y que den cosas razonables
+

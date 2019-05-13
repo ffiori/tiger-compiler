@@ -19,11 +19,13 @@ Res: resultado.  *)
 
 fun topsort P =
 	let	fun candidato E P =
-			List.filter (fn e => List.all((op<> rs e) o snd) P) E
+			List.filter (fn e => List.all((op<> rs e) o snd) P) E (*Se queda con todos los e en E tal que
+			  son segunda componente de algun par en P*)
 		fun tsort P [] Res = rev Res
 		| tsort [] St Res = rev(St @ Res)
 		| tsort P (St as (h::t)) Res =
-			let	val x = (hd(candidato St P)) handle Empty => raise Ciclo
+			let	val x = (hd(candidato St P)) handle Empty => raise Ciclo  (* Puede fallar por tipo no existente 
+			 y lanza excepcion ciclo pensando que es un tipo ya tratado *)
 			in	tsort (P --- x) (St -- x) (x::Res) end
 	fun elementos lt =
 		List.foldr (fn((x, y), l) =>

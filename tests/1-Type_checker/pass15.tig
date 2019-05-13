@@ -1,9 +1,0 @@
-/* Array type comparable */
-let
-	type A = array of int
-	type B = array of int
-	var a: A := nil
-	var b: B := a
-in 
-    0 
-end

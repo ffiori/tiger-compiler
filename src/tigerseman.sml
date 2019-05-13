@@ -100,16 +100,24 @@ fun transExp(venv, tenv) =
 				val {exp=T expr, ty=tyr} = trexp right
 			in
 				if tiposIguales tyl tyr andalso not (tyl=TNil andalso tyr=TNil) andalso tyl<>TUnit 
-				    then {exp=T (if tiposIguales tyl TString then binOpStrExp {left=expl,oper=EqOp,right=expr} else binOpIntRelExp {left=expl,oper=EqOp,right=expr}), ty=TInt RW}
-					else error("Tipos no comparables", nl)
+				then 
+					{exp=T (if tiposIguales tyl TString 
+							then binOpStrExp {left=expl,oper=EqOp,right=expr} 
+							else binOpIntRelExp {left=expl,oper=EqOp,right=expr}
+							), ty=TInt RW}
+				else error("Tipos no comparables", nl)
 			end
 		| trexp(OpExp({left, oper=NeqOp, right}, nl)) = 
 			let
 				val {exp=T expl, ty=tyl} = trexp left
 				val {exp=T expr, ty=tyr} = trexp right
 			in
-				if tiposIguales tyl tyr andalso not (tyl=TNil andalso tyr=TNil) andalso tyl<>TUnit then 
-					{exp=T (if tiposIguales tyl TString then binOpStrExp {left=expl,oper=NeqOp,right=expr} else binOpIntRelExp {left=expl,oper=NeqOp,right=expr}), ty=TInt RW}
+				if tiposIguales tyl tyr andalso not (tyl=TNil andalso tyr=TNil) andalso tyl<>TUnit 
+				then 
+					{exp=T (if tiposIguales tyl TString 
+							then binOpStrExp {left=expl,oper=NeqOp,right=expr} 
+							else binOpIntRelExp {left=expl,oper=NeqOp,right=expr})
+							, ty=TInt RW}
 					else error("Tipos no comparables", nl)
 			end
 		| trexp(OpExp({left, oper, right}, nl)) = 
@@ -127,10 +135,26 @@ fun transExp(venv, tenv) =
         						                                  |_=> error("Error de tipos en *. Debe ser entero.", nl))
 	    				| DivideOp => (case tipoReal (tyl,tenv) of TInt _ => {exp=T (binOpIntExp {left=expl, oper=oper, right=expr}),ty=TInt RW} 
                     			                                   |_=> error("Error de tipos en /. Debe ser entero.", nl))
-						| LtOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO orelse tipoReal (tyl,tenv)=TString then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW} else error("Error de tipos en <", nl)
-						| LeOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO orelse tipoReal (tyl,tenv)=TString then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW} else error("Error de tipos en <=", nl)
-						| GtOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO orelse tipoReal (tyl,tenv)=TString then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW} else error("Error de tipos en >", nl)
-						| GeOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO orelse tipoReal (tyl,tenv)=TString then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW} else error("Error de tipos en >=", nl)
+						| LtOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO 
+								  then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  else( if tipoReal (tyl,tenv)=TString
+								  		then {exp=T (binOpStrExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  		else error("Error de tipos en <", nl) )
+						| LeOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO 
+								  then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  else( if tipoReal (tyl,tenv)=TString
+								  		then {exp=T (binOpStrExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  		else error("Error de tipos en <=", nl) )
+						| GtOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO 
+								  then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  else( if tipoReal (tyl,tenv)=TString
+								  		then {exp=T (binOpStrExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  		else error("Error de tipos en >", nl) )
+						| GeOp => if tipoReal (tyl,tenv)=TInt RW orelse tipoReal (tyl,tenv)=TInt RO 
+								  then {exp=T (binOpIntRelExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  else( if tipoReal (tyl,tenv)=TString
+								  		then {exp=T (binOpStrExp {left=expl, oper=oper, right=expr}),ty=TInt RW}
+								  		else error("Error de tipos en >=", nl) )
 						| _ => raise Fail "No debería pasar! (3)"
 				else error("Error de tipos!", nl)
 			end

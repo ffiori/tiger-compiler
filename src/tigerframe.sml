@@ -45,7 +45,7 @@ type frame = {
 	name: string, (*  *)
 	formals: bool list, (* si el argumento escapa o no *)
 	locals: bool list,
-	actualArg: int ref,
+	actualArg: int ref,      
 	actualLocal: int ref,
 	actualReg: int ref
 }
@@ -63,6 +63,7 @@ fun newFrame{name, formals} = {
 }
 fun name(f: frame) = #name f
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
+(* Devuelve una access list con InFrame(offset) con las localizaciones de donde van a estar los parametros. Pag135. *)
 fun formals({formals=f, ...}: frame) = (* : access list *)
 	let	fun aux(n, []) = []
 		| aux(n, h::t) = InFrame(n)::aux(n+argsGap, t)

@@ -1,0 +1,7 @@
+let
+	type A = {i:int}
+	var a1 : A := A{i=1}
+	var a2 : A := A{i=1}
+in 
+	a1=a2
+end
