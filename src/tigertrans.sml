@@ -23,7 +23,7 @@ fun newLevel{parent={parent, frame, level}, name, formals} =
 	{
 	parent=SOME frame,
 	frame=newFrame{name=name, formals=formals},
-	level=level+1}
+	level=level}
 fun allocArg{parent, frame, level} b = tigerframe.allocArg frame b
 fun allocLocal{parent, frame, level} b = tigerframe.allocLocal frame b
 fun formals{parent, frame, level} = tigerframe.formals frame
@@ -97,7 +97,7 @@ in
 		case tigerpila.topPila salidas of
 		SOME l => l
 		| NONE => raise Fail "break incorrecto!"			
-end
+end                   
 
 val datosGlobs = ref ([]: frag list)
 fun procEntryExit{level: level, body} =
@@ -166,7 +166,7 @@ let
 in
 	Ex( ESEQ(seq[MOVE(TEMP ra, a),
                  MOVE(TEMP ri, i),
-                 EXP(externalCall("_checkindex", [TEMP ra, TEMP ri]))],
+                 EXP(externalCall("_checkindex", [TEMP ra, TEMP ri]))],  (*Does it check for nil?*)
                  MEM(BINOP(PLUS, TEMP ra,
 	                 BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
@@ -199,21 +199,12 @@ in
 end
 
 (* p.166 *)
-(*isproc == true es que es un procedimiento que no devuelve nada*)
-(* TODO FEFO: fix! it breaks if recursion *)
+(* Puede llegar a ser necesario hacer alguna distincion entre procedures y funciones *)
 fun callExp (name,external:bool,lev:level,params:exp list) = 
     let val params' = List.map unEx params
         fun paramtmps 0 = []
            |paramtmps n = (TEMP (newtemp()))::paramtmps (n-1)
-
-(*        val tmpas = paramtmps max(0, List.length params-List.length argregs)
-        fun pzip l [] = List.map (fn x=>(x,NONE)) l
-           |pzip [] _ = []
-           |pzip (h::t) (r::s) = (h,SOME r)::pzip t s
-        val empareja = pzip params' (argregs@tmpas)
-        val enstack = List.filter (fn (_,NONE)=>true
-                                      |_=>false) empareja *)
-                                      
+                             
         fun carga l [] = []
            |carga (arg::t) (tmp::s) = (MOVE(tmp,arg))::carga t s
         val sl = (* Static Link *)
@@ -230,7 +221,7 @@ fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))
 
 fun breakExp() = 
-	let val l = topSalida() handle Empty => raise Fail "break sin iteración! "
+	let val l = topSalida() handle Empty => raise Fail "break sin iteración! (no deberia pasar, error interno del compilador)"
 	in Nx (JUMP(NAME l,[l])) end
 
 fun seqExp ([]:exp list) = Nx (EXP(CONST 0))
@@ -270,7 +261,7 @@ fun forExp {lo, hi, var, body} =
     let val var' = unEx var
         val (l1,l2,sal) = (newlabel(), newlabel(), topSalida())
     in Nx (seq (case hi of
-        Ex (CONST n) =>
+        Ex (CONST n) => (* Se puede simplificar sacando el primer caso e incluyendolo en el segundo directamente. *)
             if n<valOf(Int.maxInt) (* Parche para el caso en que n=maxInt *) 
             then [ MOVE(var',unEx lo),
                    JUMP(NAME l2,[l2]),
@@ -278,7 +269,9 @@ fun forExp {lo, hi, var, body} =
                    MOVE(var',BINOP(PLUS,var',CONST 1)),
                    LABEL l2, CJUMP(GT,var',CONST n,sal,l1),
                    LABEL sal ]
-            else [ MOVE(var',unEx lo), (* Si n=maxInt entonces debo hacer al menos una iteración y tener como condición de salida que var'=n, ya que nunca va a ser mayor. *)
+            else [ MOVE(var',unEx lo), (* Si n=maxInt entonces debo hacer al menos una 
+			                               iteración y tener como condición de salida que var'=n, 
+										   ya que nunca va a ser mayor. *)
                    LABEL l2, unNx body, CJUMP(EQ,var',CONST n,sal,l1),
                    LABEL l1, MOVE(var',BINOP(PLUS,var',CONST 1)),
                    JUMP(NAME l2,[l2]),

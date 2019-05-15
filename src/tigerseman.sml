@@ -90,10 +90,8 @@ fun transExp(venv, tenv) =
 	            val _ = if List.length targs = List.length ltargs then () else error("Función "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
 	            val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
 	                    handle Empty => error("Nº de args",nl)
-(*
-            in {ty=tresult, exp=T (callExp(label,extern,level,ltexps))} end (* callExp(label, extern, ,level,ltexps) *) (* fun callExp (name,external:bool,isproc:bool,lev:level,ls:exp list) *)
-*)
-            in {ty=tresult, exp=T (nilExp())} end (* TODO FEFO: provisoriamente devolvemos nilExp(). Hay que arreglar tigertrans.callExp() *)
+
+            in {ty=tresult, exp=T (callExp(label,extern,level,ltexps))} end 
 		| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 			let
 				val {exp=T expl, ty=tyl} = trexp left
@@ -234,10 +232,13 @@ fun transExp(venv, tenv) =
 		        val _ = if cmpTipo(tyhi,tylo,nl) <> TInt RW then error("Tipo no entero en rango de for",nl) else ()
 		        val varEntry = {ty=TInt RO, level=getActualLev(), access=allocLocal (topLevel()) escape}
 		        val venv' = tabRInserta(var, Var varEntry, venv)
+				val _ = preWhileForExp()
 		        val {ty=tybody,exp=T ebody} = transExp (venv',tenv) body
 		        val _ = if tybody<>TUnit then error("Tipo no unit del cuerpo del for",nl) else ()
 		        val varexp = simpleVar((#access)varEntry, (#level)varEntry)
-			in {exp=T (forExp{hi=ehi, lo=elo, body=ebody, var=varexp }), ty=TUnit} end (* revisar varexp *)
+				val rta = {exp=T (forExp{hi=ehi, lo=elo, body=ebody, var=varexp }), ty=TUnit}
+                val _ = postWhileForExp()
+			in rta end
 		| trexp(LetExp({decs, body}, _)) =
 			let
 (*				val (venv', tenv', _) = List.foldl (fn (d, (v, t, _)) => trdec(v, t) d) (venv, tenv, []) decs

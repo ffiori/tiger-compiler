@@ -11,3 +11,5 @@ end
 
 Usar binops en strings , ints y que den cosas razonables
 
+if c then record else record, testear que esto ande bien!
+
