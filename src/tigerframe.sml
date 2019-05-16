@@ -25,7 +25,7 @@ val fp = "FP"				(* frame pointer *)
 val sp = "SP"				(* stack pointer *)
 val rv = "RV"				(* return value  *)
 val ov = "OV"				(* overflow value (edx en el 386) *)
-val wSz = 4					(* word size in bytes *)
+val wSz = 4					(* word size in bytes *)(* TODO: adjust to the chosen architecture *)
 val log2WSz = 2				(* base two logarithm of word size in bytes *)
 val fpPrev = 0				(* offset (bytes) *)
 val fpPrevLev = 8			(* offset (bytes) *)
@@ -42,15 +42,16 @@ val callersaves = []
 val calleesaves = []
 
 type frame = {
-	name: string, (*  *)
+	name: string,
 	formals: bool list, (* si el argumento escapa o no *)
 	locals: bool list,
-	actualArg: int ref,      
-	actualLocal: int ref,
+	actualArg: int ref, (* último argumento generado *)      
+	actualLocal: int ref, (* último local generado *)
 	actualReg: int ref
 }
 type register = string
-datatype access = InFrame of int | InReg of tigertemp.label
+datatype access = InFrame of int (* Offset respecto del frame pointer *) 
+				| InReg of tigertemp.label
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
 	| STRING of tigertemp.label * string
 fun newFrame{name, formals} = {
