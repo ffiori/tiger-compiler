@@ -87,10 +87,11 @@ fun transExp(venv, tenv) =
 	            val lteargs = List.map trexp args
 	            val ltexps = List.map (fn (T x) => x) (List.map (#exp) lteargs)
 	            val ltargs = List.map (#ty) lteargs
-	            val _ = if List.length targs = List.length ltargs then () else error("Función "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
+	            val _ = if List.length targs = List.length ltargs
+                        then ()
+                        else error("Función "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
 	            val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
 	                    handle Empty => error("Nº de args",nl)
-
             in {ty=tresult, exp=T (callExp(label,extern,level,ltexps))} end 
 		| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 			let
@@ -115,8 +116,8 @@ fun transExp(venv, tenv) =
 					{exp=T (if tiposIguales tyl TString 
 							then binOpStrExp {left=expl,oper=NeqOp,right=expr} 
 							else binOpIntRelExp {left=expl,oper=NeqOp,right=expr})
-							, ty=TInt RW}
-					else error("Tipos no comparables", nl)
+                    , ty=TInt RW}
+                else error("Tipos no comparables", nl)
 			end
 		| trexp(OpExp({left, oper, right}, nl)) = 
 			let
@@ -284,7 +285,7 @@ fun transExp(venv, tenv) =
 		                                | _ => error("Se intenta indexar por medio de algo no int",nl)
             in {exp=T (subscriptVar(vexp,eexp)) ,ty=tyfinal} end
 
-        and transDec (venv,tenv,el,[]) = (venv,tenv,List.rev el)
+        and transDec (venv,tenv,el,[]) = (venv,tenv,List.rev el) (* el = expression list, inicializaciones de variables de un let. p167 *)
         | transDec (venv,tenv,el,(VarDec ({name,escape=ref escape,typ=NONE,init},nl))::ts) =
             let val {exp=T exp,ty=ty} = transExp(venv,tenv) init
                 val _ = case ty of TNil => error("Variable "^name^" inicializada en nil sin tipar.",nl)  (* var a := nil, tiene que dar error, test45.tig *)
@@ -295,7 +296,9 @@ fun transExp(venv, tenv) =
             let val {exp= T exp,ty} = transExp(venv,tenv) init
                 val tyasignado = case tabBusca(t,tenv) of (* var x : tyasignado := init, si init es nil, yo quiero que el tipo de x no sea TNil sino tyasignado. *)
                                     NONE => error(t^": tipo no existe",nl)
-                                   |SOME ty' => if tiposIguales ty ty' then ty' else (tigermuestratipos.printTTipos([("ty: ",ty),("ty': ",ty')]); error("Tipos no coinciden!",nl))
+                                   |SOME ty' => if tiposIguales ty ty' 
+                                                then ty' 
+                                                else (tigermuestratipos.printTTipos([("ty: ",ty),("ty': ",ty')]); error("Tipos no coinciden!",nl))
                 val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=allocLocal (topLevel()) escape}, venv)
             in transDec(venv',tenv,exp::el,ts) end
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
