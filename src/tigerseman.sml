@@ -350,7 +350,7 @@ fun transExp(venv, tenv) =
                                                 |_ => error("No debería pasar, función "^name,pos)
                                  val _ = pushLevel level 
                                  (* preFunctionDec ?? TODO *)
-                                 val {exp=T exp,ty=tybody} = transExp(fvenv,tenv) body (* TODO check línea controversial, hace trexp(IfExp) o algo así porque body es IfExp, y le pasa los entornos que formó acá adentro *)
+                                 val {exp=T exp,ty=tybody} = transExp(fvenv,tenv) body
                                  val _ = popLevel()
                                  (* postFunctionDec ??  TODO *)
                                  val tyres = case result of
@@ -365,7 +365,7 @@ fun transExp(venv, tenv) =
                 val codint = List.foldl (fn ({exp,ty},els) => exp::els) el et
                 (* Por el momento ignoro el valor et, luego voy a tener que almacenar el código intermedio en algún lado para poder ir usando las funciones más adelante.
                  * Si todo está bien tipado, no va a saltar error. Por eso tiro et al carajo por ahora. *)
-            in transDec(venv',tenv,codint,ts) end
+            in transDec(venv',tenv,codint,ts) end (* TODO FEFO: check, creo que codint no va ahí, se debería mantener 'el' sin modificar, pág167 *)
         | transDec (venv,tenv,el,(TypeDec lt)::ts) = (*lt: batch de declaraciones de tipos*)
             let val sortedNames = Listsort.sort 
                                   (fn (({name=x,ty=_},_), ({name=y,ty=_},_)) => if x<y then LESS else (if x>y then GREATER else EQUAL)) 
