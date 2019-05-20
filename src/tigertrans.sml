@@ -119,9 +119,12 @@ fun stringExp(s: string) =
 		val str = ".string \""^s^"\""
 		val _ = datosGlobs:=(!datosGlobs @ [STRING(l, len), STRING("", str)])
 	in	Ex(NAME l) end
+
 fun preFunctionDec() =
-	(pushSalida(NONE);
+	(pushSalida(NONE); (* para que no haya break sueltos*)
 	actualLevel := !actualLevel+1)
+
+(*val functionDec : exp * level * bool -> exp *)
 fun functionDec(e, l, proc) =
 	let	val body =
 				if proc then unNx e
@@ -129,6 +132,7 @@ fun functionDec(e, l, proc) =
 		val body' = procEntryExit1(#frame l, body)
 		val () = procEntryExit{body=Nx body', level=l}
 	in	Ex(CONST 0) end
+
 fun postFunctionDec() =
 	(popSalida(); actualLevel := !actualLevel-1)
 
