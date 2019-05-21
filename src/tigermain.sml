@@ -2,6 +2,7 @@ open tigerlex
 open tigergrm
 open tigerescap
 open tigerseman
+open tigertrans
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -29,8 +30,15 @@ fun main(args) =
 		val expr = prog Tok lexbuf handle _ => errParsing lexbuf
 		val _ = findEscape(expr)
 		val _ = if arbol then tigerpp.exprAst expr else ()
+		val _ = transProg(expr);
+		val fragmentos = tigertrans.getResult()
+		val _ = if ir then print(tigertrans.Ir(fragmentos)) else ()
+		(*val canonizar = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize)*)
+
+
+
 	in
-		transProg(expr);
+
 		print "Success\n"
 	end	handle Fail s => print("Fail: "^s)
 

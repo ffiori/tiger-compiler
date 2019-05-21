@@ -296,8 +296,10 @@ fun transExp(venv, tenv) =
                                    |SOME ty' => if tiposIguales ty ty' 
                                                 then ty' 
                                                 else (tigermuestratipos.printTTipos([("ty: ",ty),("ty': ",ty')]); error("Tipos no coinciden!",nl))
-                val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=allocLocal (topLevel()) escape}, venv)
-            in transDec(venv',tenv,exp::el,ts) end
+                val acc = allocLocal (topLevel()) escape
+				val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=acc}, venv)
+				val exp' = varDec(acc,exp)
+            in transDec(venv',tenv,exp'::el,ts) end
 			(* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
             let 

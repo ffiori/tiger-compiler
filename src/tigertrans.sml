@@ -150,7 +150,11 @@ fun simpleVar(acc, nivel) =
                     |aux n = MEM(BINOP(PLUS,CONST fpPrevLev,aux (n-1)))
             in Ex(MEM(BINOP(PLUS,CONST k,aux(!actualLevel-nivel)))) end
 
-fun varDec(acc) = simpleVar(acc, getActualLev())
+fun varDec(acc,exp) = Nx (MOVE(
+	                       unEx(simpleVar(acc, getActualLev())),
+						   unEx(exp)
+						  )
+					  )
 
 fun fieldVar(var, field) = 
 	let val r = unEx var
