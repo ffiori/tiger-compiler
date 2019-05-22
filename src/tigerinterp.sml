@@ -213,7 +213,8 @@ struct
 		let
 			val str = TextIO.inputLine TextIO.stdIn
 		in
-			storeString str
+      case str of NONE => raise Fail("No debería pasar no str")
+                | SOME x => storeString x
 		end
 
 		val tabLib: (tigertemp.label, int list -> int) Tabla =
@@ -362,5 +363,5 @@ struct
 			in
 				rv
 			end
-	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end
+	in (print("Comienzo de ejecución...\n"); evalFun("_tigermainL0", []); print("Fin de ejecución.\n")) end
 end

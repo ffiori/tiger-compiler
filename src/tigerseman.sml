@@ -287,8 +287,10 @@ fun transExp(venv, tenv) =
             let val {exp=T exp,ty=ty} = transExp(venv,tenv) init
                 val _ = case ty of TNil => error("Variable "^name^" inicializada en nil sin tipar.",nl)  (* var a := nil, tiene que dar error, test45.tig *)
                                    |_ => ()
-                val venv' = tabRInserta(name,Var {ty=ty, level=getActualLev(), access=allocLocal (topLevel()) escape},venv)
-            in transDec(venv',tenv,exp::el,ts) end
+                val acc = allocLocal (topLevel()) escape
+                val venv' = tabRInserta(name, Var {ty=ty, level=getActualLev(), access=acc}, venv)
+                val exp' = varDec(acc,exp)
+            in transDec(venv',tenv,exp'::el,ts) end
         | transDec (venv,tenv,el,(VarDec ({name,escape=ref escape,typ=SOME t,init},nl))::ts) =
             let val {exp= T exp,ty} = transExp(venv,tenv) init
                 val tyasignado = case tabBusca(t,tenv) of (* var x : tyasignado := init, si init es nil, yo quiero que el tipo de x no sea TNil sino tyasignado. *)
@@ -297,8 +299,8 @@ fun transExp(venv, tenv) =
                                                 then ty' 
                                                 else (tigermuestratipos.printTTipos([("ty: ",ty),("ty': ",ty')]); error("Tipos no coinciden!",nl))
                 val acc = allocLocal (topLevel()) escape
-				val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=acc}, venv)
-				val exp' = varDec(acc,exp)
+                val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=acc}, venv)
+                val exp' = varDec(acc,exp)
             in transDec(venv',tenv,exp'::el,ts) end
 			(* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
@@ -338,11 +340,18 @@ fun transExp(venv, tenv) =
                 (* En lfyvenvs guardo las funciones con el environment venv' aumentado con los argumentos de la función como variables. *)
                 val lfyvenvs = List.map
                                (fn (func as ({body,name,params,result},pos)) => 
-                                    let val fvenv = List.foldr 
-                                                    (fn ({name,escape=ref escape,typ},env) => 
-                                                        tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=allocArg (topLevel()) escape, level=getActualLev()}, env))
+                                let
+                                    val level = case tabBusca(name,venv') of
+                                                SOME (Func{level,...}) => level
+                                                |_ => error("No debería pasar, función "^name,pos)
+                                                
+                                    val access_list = tigertrans.formals level
+                                    
+                                    val fvenv = List.foldr 
+                                                    (fn (({name,escape=ref escape,typ},acc),env) => 
+                                                        tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env))
                                                     venv'
-                                                    params
+                                                    (ListPair.zip(params,access_list))
                                     in (func, fvenv) end)
                                lf
 

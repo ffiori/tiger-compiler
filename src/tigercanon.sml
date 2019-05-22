@@ -3,6 +3,7 @@ struct
 
 open tigertab
 open tigertree
+open tigertemp
 
 fun linearize(stm0: stm) : stm list =
 	let

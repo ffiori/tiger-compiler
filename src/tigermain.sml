@@ -3,6 +3,8 @@ open tigergrm
 open tigerescap
 open tigerseman
 open tigertrans
+open tigerframe
+open tigerinterp
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -33,12 +35,25 @@ fun main(args) =
 		val _ = transProg(expr);
 		val fragmentos = tigertrans.getResult()
 		val _ = if ir then print(tigertrans.Ir(fragmentos)) else ()
-		(*val canonizar = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize)*)
-
-
-
+		val canonFunction = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize) (* : tigertree.stm -> tigertree.stm list *)
+    val procs = List.filter
+                (fn frag =>
+                    case frag of
+                        PROC _ => true
+                      | STRING _ => false
+                )
+                fragmentos
+    val strings = List.filter
+                  (fn frag =>
+                      case frag of
+                          PROC _ => false
+                        | STRING _ => true
+                  )
+                  fragmentos
+    val canonProcs = List.map (fn PROC {body=body, frame=frame} => (if inter then print (tigerframe.name(frame)^"\n") else () ; (canonFunction body, frame))) procs
+    val canonStrings = List.map (fn STRING x => x) strings
+    val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 	in
-
 		print "Success\n"
 	end	handle Fail s => print("Fail: "^s)
 
