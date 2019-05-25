@@ -51,11 +51,15 @@ type frame = {
     actualLocal: int ref, (* último local generado *)
     actualReg: int ref
 }
+
 type register = string
+
 datatype access = InFrame of int (* Offset respecto del frame pointer *) 
                 | InReg of tigertemp.label
+
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
               | STRING of tigertemp.label * string
+
 fun newFrame{name, formals} = {
     name=name,
     formals=formals,
@@ -64,31 +68,39 @@ fun newFrame{name, formals} = {
     actualLocal=ref localsInicial,
     actualReg=ref regInicial
 }
+
 fun name(f: frame) = #name f
+
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
-(* Devuelve una access list con InFrame(offset) con las localizaciones de donde van a estar los parametros. Pag135. *)
-fun formals({formals=f, ...}: frame) = (* : access list *)
-    let	fun aux(n, []) = []
-        | aux(n, h::t) = InFrame(n)::aux(n+argsGap, t)
-    in aux(argsInicial, f) end
+
 fun maxRegFrame(f: frame) = !(#actualReg f)
+
 fun allocArg (f: frame) b = 
-	case b of
-	true =>
-		let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
-			val _ = #actualArg f := !(#actualArg f)+1
-		in	InFrame ret end
-	| false => InReg(tigertemp.newtemp())
+    case b of
+        true =>
+            let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
+                val _ = #actualArg f := !(#actualArg f)+1
+            in InFrame ret end
+        | false => InReg(tigertemp.newtemp())
+
 fun allocLocal (f: frame) b = 
     case b of
-    true =>
-        let	val ret = InFrame(!(#actualLocal f)+localsGap)
-        in	#actualLocal f:=(!(#actualLocal f)-1); ret end
-    | false => InReg(tigertemp.newtemp())
+        true =>
+            let	val ret = InFrame(!(#actualLocal f)+localsGap)
+            in	#actualLocal f:=(!(#actualLocal f)-1); ret end
+        | false => InReg(tigertemp.newtemp())
+
 fun exp(InFrame k) e = MEM(BINOP(PLUS, TEMP(fp), CONST k))
     | exp(InReg l) e = TEMP l
+
 fun externalCall(s, l) = CALL(NAME s, l)
 
+(* Devuelve una access list con InFrame(offset) con las localizaciones de donde van a estar los parametros. Pag135. *)
+fun formals(frame : frame) = (* : access list *)
+    let	fun aux [] = []
+            |aux (escapes::lformals) = (allocArg frame escapes)::(aux lformals)
+    in aux (#formals frame) end
+    
 (* Se define al final de todo esta función TODO *)
 fun procEntryExit1 (frame,body) = body
 end

@@ -302,14 +302,16 @@ fun transExp(venv, tenv) =
                 val venv' = tabRInserta(name, Var {ty=tyasignado, level=getActualLev(), access=acc}, venv)
                 val exp' = varDec(acc,exp)
             in transDec(venv',tenv,exp'::el,ts) end
-			(* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
+            
+        (* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
             let 
 				(* chequear si hay nombres duplicados en este batch *)
 				val _ = List.foldr 
-						(fn (({name,params,result,body},pos),newfuncs') => if tabEsta(name,newfuncs')
-																			then error("Función "^name^" definida dos veces en el mismo batch!",pos)
-																			else tabInserta(name,(),newfuncs'))
+						(fn (({name,params,result,body},pos),newfuncs') => 
+                            if tabEsta(name,newfuncs')
+                            then error("Función "^name^" definida dos veces en el mismo batch!",pos)
+                            else tabInserta(name,(),newfuncs'))
 						(tabNueva())
 						lf
 
@@ -342,16 +344,16 @@ fun transExp(venv, tenv) =
                                (fn (func as ({body,name,params,result},pos)) => 
                                 let
                                     val level = case tabBusca(name,venv') of
-                                                SOME (Func{level,...}) => level
-                                                |_ => error("No debería pasar, función "^name,pos)
+                                                    SOME (Func{level,...}) => level
+                                                    |_ => error("No debería pasar, función "^name,pos)
                                                 
                                     val access_list = tigertrans.formals level
                                     
                                     val fvenv = List.foldr 
-                                                    (fn (({name,escape=ref escape,typ},acc),env) => 
-                                                        tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env))
-                                                    venv'
-                                                    (ListPair.zip(params,access_list))
+                                                (fn (({name,escape=ref escape,typ},acc),env) => 
+                                                    tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env))
+                                                venv'
+                                                (ListPair.zip(params,access_list))
                                     in (func, fvenv) end)
                                lf
 
@@ -404,8 +406,7 @@ fun transExp(venv, tenv) =
         | transTy(tenv,RecordTy flist,nl) =
             let val flist' = List.map (fn {name,escape,typ} => (name,ref (transTy(tenv,typ,nl)),123456)) flist
             in TRecord (flist',ref ()) end
-    
-	in trexp end
+    in trexp end
 	
 fun transProg ex =
 	let	val main = LetExp({decs=[FunctionDec[({name="_tigermain", params=[], result=SOME "int", body=ex}, 0)]], body=UnitExp 0}, 0)
@@ -414,45 +415,4 @@ fun transProg ex =
 		val _ = transExp(tab_vars, tab_tipos) main
 	in	print "bien!\n" end
 
-(*
-
-and pptipo t = case t of
-    TUnit => "TUnit"
-   |TNil => "TNil"
-   |TInt RO => "TInt RO"
-   |TInt RW => "TInt RW"
-   |TString => "TString"
-   |TArray (t',_) => "TArray "^pptipo(!t')
-   |TRecord (ls,_) => let fun go(ls) = ( case ls of [] => ""
-                                                    |[(s,t,_)] => s^" = "^pptipo(!t)
-                                                    |(s,t,_)::ls' => s^" = "^pptipo(!t)^", "^go(ls') )
-                      in "TRecord { "^go(ls)^" }" end
-   |TTipo s => "TTipo "^s
-
-and pptipoList ls = case ls of
-    [] => ""
-   |[t] => pptipo t
-   |t::ts => (pptipo t) ^ ", " ^ (pptipoList ts)
-
-and ppee ee = case ee of
-    Var {ty=t} => pptipo t
-   |Func {level=_, label=l, formals=targs, result=tres, extern=b} => "label="^l^
-                                                                     ", formals=["^pptipoList(targs)^
-                                                                    "], result="^pptipo(tres)^
-                                                                     ", extern="^(if b then "true" else "false")
-
-and ppvenv_ env = case env of
-     [] => ""
-    |[(s,e)] => s^" = "^(ppee e)
-    |(s,e)::es => s^" = "^(ppee e)^";\n"^(ppvenv_ es)
-
-and ppvenv env = print("["^ppvenv_(tabAList env)^"]\n")
-
-and pptenv_ env = case env of
-     [] => ""
-    |[(s,t)] => s^" = "^(pptipo t)
-    |(s,t)::es => s^" = "^(pptipo t)^";\n"^(pptenv_ es)
-    
-and pptenv env = print("["^pptenv_(tabAList env)^"]\n")
-*)
 end
