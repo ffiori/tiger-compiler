@@ -1,0 +1,7 @@
+let 
+	function id (x : int) : int = x
+        var x: int := id(129)
+in
+	x
+end
+

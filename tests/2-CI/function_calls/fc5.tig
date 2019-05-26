@@ -1,0 +1,6 @@
+let 
+	function is_40 (x : int) : int = if x=40 then 1 else 0
+in
+	is_40(40)
+end
+

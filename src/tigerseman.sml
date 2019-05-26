@@ -341,7 +341,7 @@ fun transExp(venv, tenv) =
                             venv
                             lpr
 
-                (* 3 - En lfyvenvs guardo las funciones con el environment venv' aumentado con los argumentos de la función como variables. *)
+                (* 3 -Aumentar el entorno de variables con los argumentos y calcular CI *)
                 val ci  = List.map
 
                                (fn (func as ({body,name,params,result},pos)) => 

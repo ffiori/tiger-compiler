@@ -1,0 +1,18 @@
+let 
+
+	function times(x : int, y:int) : int = (
+		let var ans: int := 0
+		in (for i:= 1 to y do (ans:= ans+x));
+                   ans
+		end)
+
+	function power(x : int, y:int) : int = (
+		let var ans: int := 1
+		in (for i:= 1 to y do (ans:= times(ans,x)));
+                   ans
+		end)
+
+in
+	power(4,3)
+end
+

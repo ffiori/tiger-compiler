@@ -1,0 +1,13 @@
+let 
+
+	function times(x : int, y:int) : int = (
+		let var ans: int := 0
+		in (for i:= 1 to y do (ans:= ans+x));
+                   ans
+		end)
+
+
+in
+	times(4,3)
+end
+

@@ -1,0 +1,6 @@
+let 
+	function id (x : int) : int = x-10
+in
+	id(129)
+end
+

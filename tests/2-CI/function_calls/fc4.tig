@@ -1,0 +1,6 @@
+let 
+	function sum (x : int, y:int) : int = x+y
+in
+	sum(5,3)
+end
+
