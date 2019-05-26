@@ -13,6 +13,6 @@ let
 		end)
 
 in
-	power(4,3)
+	power(2,8)
 end
 
