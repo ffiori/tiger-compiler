@@ -92,7 +92,7 @@ fun transExp(venv, tenv) =
                         else error("Función "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
 	            val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
 	                    handle Empty => error("Nº de args",nl)
-            in {ty=tresult, exp=T (callExp(label,extern,level,ltexps))} end 
+            in {ty=tresult, exp=T (callExp(label,extern,(tresult = TUnit),level,ltexps))} end 
 		| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 			let
 				val {exp=T expl, ty=tyl} = trexp left
@@ -305,7 +305,7 @@ fun transExp(venv, tenv) =
 			(* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
             let 
-				(* chequear si hay nombres duplicados en este batch *)
+				(* 1 - chequear si hay nombres duplicados en este batch *)
 				val _ = List.foldr 
 						(fn (({name,params,result,body},pos),newfuncs') => if tabEsta(name,newfuncs')
 																			then error("Función "^name^" definida dos veces en el mismo batch!",pos)
@@ -313,73 +313,91 @@ fun transExp(venv, tenv) =
 						(tabNueva())
 						lf
 
-				(* para cada funcion, crea un par (nombre, Func ...) ver EnvEntry tigersres.sml) *)		
+				(* 2 - Aumentar venv con los tipos de las funciones definidas en este batch,  *)
+
+				(* 2.a - Para cada nueva funcion, crear la entrada que se va a meter en la tabla *)		
                 val lpr = List.map
                           ( fn ({name,params,result,body},pos) => 
-                              let val nombre = name^tigertemp.newlabel()
+						      (* Crear un label unico para la funcion. Podemos usar el nro de linea por si se repiten nombres *)
+                              let val label = if name="_tigermain" then name else name^"_"^tigertemp.newlabel()^"_"^(Int.toString pos)
+
                               in (name,Func{formals = List.map (fn {name=_,escape=_,typ=typ} => transTy(tenv,typ,pos)) params,
                                             result = case result of
                                                         NONE => TUnit
                                                         |SOME tr => (case tabBusca(tr,tenv) of
                                                                         NONE => error("Tipo de retorno "^tr^" no existe!",pos)
                                                                         |SOME t => t),
-                                            label = nombre,
+                                            label = label,
                                             level = newLevel{parent=topLevel(),
-                                                             name=nombre,
+                                                             name=label,
                                                              formals=List.map (fn {name=_,escape=ref escape,typ=_} => escape) params},
                                             extern = false})
                               end )
                           lf
-                (* Aumento venv con los tipos de las funciones definidas en este batch,
-                   y borro las variables del mismo nombre con tabRInserta, porque se deben pisar. p515 name spaces. *)
+                (* 2.b - Agregar las entradas a venv, pisaando las variables del mismo nombre-  p515 name spaces. *)
                 val venv' = List.foldr
                             ( fn ((n,fe),env) => tabRInserta(n,fe,env) )
                             venv
                             lpr
 
-                (* En lfyvenvs guardo las funciones con el environment venv' aumentado con los argumentos de la función como variables. *)
+                (* 3 - En lfyvenvs guardo las funciones con el environment venv' aumentado con los argumentos de la función como variables. *)
                 val lfyvenvs = List.map
+
+
+
                                (fn (func as ({body,name,params,result},pos)) => 
+
+
                                 let
+
                                     val level = case tabBusca(name,venv') of
                                                 SOME (Func{level,...}) => level
                                                 |_ => error("No debería pasar, función "^name,pos)
                                                 
-                                    val access_list = tigertrans.formals level
                                     
                                     val fvenv = List.foldr 
-                                                    (fn (({name,escape=ref escape,typ},acc),env) => 
-                                                        tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env))
+                                                    (fn ({name,escape,typ},env) => 
+													    let 
+															val acc = allocArg (topLevel()) (!escape)
+														in
+                                                        	tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env)
+														end
+													)
                                                     venv'
-                                                    (ListPair.zip(params,access_list))
-                                    in (func, fvenv) end)
+                                                    params
+								in (func, fvenv) end)
+
+
                                lf
 
-                (* et = expresiones traducidas - Contiene traducidas las expresiones de los body de las funciones,
-				  *)
+                (* 4 - et = expresiones traducidas - Contiene expresiones traducidas de los body de las funciones *)
                 val et = List.map 
                          (fn (({name,params,result,body},pos),fvenv) =>  (* Chequea que el body esté bien tipado y coincida con el tipo de retorno *)
-                             let val level = case tabBusca(name,venv') of
+                             let 
+							     val _ = preFunctionDec()
+							     val level = case tabBusca(name,venv') of
                                                 SOME (Func{level,...}) => level
                                                 |_ => error("No debería pasar, función "^name,pos)
                                  val _ = pushLevel level 
-								 val _ = preFunctionDec()
+								 
                                  val {exp=T exp,ty=tybody} = transExp(fvenv,tenv) body
-                                 val tyres = case result of
-                                                 NONE => (functionDec(exp,level,true);TUnit)
+                                 val (ci,tyres) = ( case result of
+                                                 NONE => (functionDec(exp,level,true),TUnit)
                                                 |SOME tr => (case tabBusca(tr,tenv) of 
                                                                  NONE => error("Tipo de retorno "^tr^" no existe! Se debería detectar antes...",pos)
-                                                                |SOME t => (functionDec(exp,level,false);t))
-								 val _ = postFunctionDec()
+                                                                |SOME t => (functionDec(exp,level,false),t) ) )
+
                                  val _ = popLevel()
-                             in if tiposIguales tybody tyres 
-                                then {exp=exp,ty=tybody}
+	                             val _ = postFunctionDec()
+                             in if tiposIguales tybody tyres
+                                then {exp=ci,ty=tybody}
                                 else error("Tipo de retorno no coincide con el tipo del cuerpo de la función "^name,pos) end)
                          lfyvenvs
+			
                 val codint = List.foldl (fn ({exp,ty},els) => exp::els) el et
                 (* Por el momento ignoro el valor et, luego voy a tener que almacenar el código intermedio en algún lado para poder ir usando las funciones más adelante.
                  * Si todo está bien tipado, no va a saltar error. Por eso tiro et al carajo por ahora. *)
-            in transDec(venv',tenv,el,ts) end
+            in transDec(venv',tenv,codint,ts) end
         | transDec (venv,tenv,el,(TypeDec lt)::ts) = (*lt: batch de declaraciones de tipos*)
             let val sortedNames = Listsort.sort 
                                   (fn (({name=x,ty=_},_), ({name=y,ty=_},_)) => if x<y then LESS else (if x>y then GREATER else EQUAL)) 
