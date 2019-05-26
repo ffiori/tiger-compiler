@@ -98,20 +98,49 @@ struct
 		val _ = List.map (fn (lab, str) => storeLabel lab (storeString str)) stringfracs
 
 		(* Funciones de biblioteca *)
+                (* Cortesía de Eze Postan, Franco Giustozzi y Nico Del Piano *)
+                fun getRealString(strPtr:int):string =
+                   let
+                        val str = explode (loadString strPtr)
+                        val (str2,delFuente) = case str of
+                                                #"."::( #"l"::( #"o"::( #"n"::( #"g"::_)))) => (explode (loadString (strPtr + tigerframe.wSz)),true)
+                                               | _ => (str,false) 
+                        (* format1 lleva los \x0a y \x09 a \n y \t respectivamente*)
+                        fun format1 [] = [] 
+                        | format1 (#"\\"::(#"x"::(#"0"::(#"a"::xs)))) = #"\n"::format1 xs 
+                        | format1 (#"\\"::(#"x"::(#"0"::(#"9"::xs)))) = #"\t"::format1 xs
+                        | format1 (x::xs) = x::format1 xs 
+                        
+                        (*front quita la comilla al final de un string del fuente*)
+                        fun front [] = raise Fail "front en []"
+                        | front [x] = [] 
+                        | front (x::xs) = x :: front xs 
+
+                        (*ripFront quita el .string '' del inicio de un string del fuente*)
+                        fun ripFront xs = List.drop(xs,9) 
+
+                        val finalStr = if delFuente 
+                                       then (front o ripFront o format1) str2
+                                       else str2
+                   in
+			implode finalStr
+                   end
+              
+
 		fun initArray(siz::init::rest) =
 		let
-			val mem = getNewMem(siz)
-			val l = (mem+1, siz)::(List.tabulate(siz, (fn x => (mem+tigerframe.wSz*x, init))))
+			val mem = getNewMem(siz+1)
+			val l = (mem, siz)::(List.tabulate(siz, (fn x => (mem+tigerframe.wSz*(x+1), init))))
 			val _ = List.map (fn (a,v) => storeMem a v) l
 		in
-			mem
+			mem+tigerframe.wSz
 		end
 		| initArray _ = raise Fail("No debería pasar (initArray)")
 
 		fun checkIndexArray(arr::idx::rest) =
 		let
-			val siz = loadMem (arr+1)
-			val _ = if (idx>=siz orelse idx<0) then raise Fail("Índice fuara de rango\n") else ()
+			val siz = loadMem (arr-tigerframe.wSz)
+			val _ = if (idx>=siz orelse idx<0) then raise Fail("Índice fuera de rango"^" siz:"^Int.toString siz^" idx:"^Int.toString idx^"\n") else ()
 		in
 			0
 		end
@@ -138,8 +167,8 @@ struct
 
 		fun stringCompare(strPtr1::strPtr2::rest) =
 		let
-			val str1 = loadString strPtr1
-			val str2 = loadString strPtr2
+			val str1 = getRealString strPtr1
+			val str2 = getRealString strPtr2
 			val res = String.compare(str1, str2)
 		in
 			case res of
@@ -151,7 +180,7 @@ struct
 
 		fun printFun(strPtr::rest) =
 		let
-			val str = loadString strPtr
+            val str = getRealString strPtr
 			val _ = print(str)
 		in
 			0
@@ -162,7 +191,7 @@ struct
 
 		fun ordFun(strPtr::rest) =
 		let
-			val str = loadString strPtr
+			val str = getRealString strPtr
 			val ch = hd(explode(str))
 		in
 			ord(ch)
@@ -180,7 +209,7 @@ struct
 
 		fun sizeFun(strPtr::rest) =
 		let
-			val str = loadString strPtr
+			val str = getRealString strPtr
 		in
 			String.size(str)
 		end
@@ -188,7 +217,7 @@ struct
 
 		fun substringFun(strPtr::first::n::rest) =
 		let
-			val str = loadString strPtr
+			val str = getRealString strPtr
 			val substr = String.substring(str, first, n)
 		in
 			storeString substr
@@ -197,8 +226,8 @@ struct
 
 		fun concatFun(strPtr1::strPtr2::rest) =
 		let
-			val str1 = loadString strPtr1
-			val str2 = loadString strPtr2
+			val str1 = getRealString strPtr1
+			val str2 = getRealString strPtr2
 			val res = str1^str2
 		in
 			storeString res
@@ -213,8 +242,8 @@ struct
 		let
 			val str = TextIO.inputLine TextIO.stdIn
 		in
-      case str of NONE => raise Fail("No debería pasar no str")
-                | SOME x => storeString x
+			case str of NONE => raise Fail("")
+                                    | SOME x => storeString x
 		end
 
 		val tabLib: (tigertemp.label, int list -> int) Tabla =
@@ -223,7 +252,7 @@ struct
 				("_checkIndexArray", checkIndexArray),
 				("_allocRecord", allocRecord),
 				("_checkNil", checkNil),
-				("_stringcmp", stringCompare),
+				("_stringCompare", stringCompare), 
 				("print", printFun),
 				("flush", flushFun),
 				("ord", ordFun),
@@ -314,7 +343,9 @@ struct
 				(* Encontrar la función*)
 				val ffrac = List.filter (fn (body, frame) => tigerframe.name(frame)=f) funfracs
 				val _ = if (List.length(ffrac)<>1) then raise Fail ("No se encuentra la función, o repetida: "^f^"\n") else ()
-				val [(body, frame)] = ffrac
+				val (body, frame) = case ffrac of
+				    [] => raise Fail ("tigerinterp.sml (evalFun): no debe pasar! (1)\n")
+				    | ((b,f) :: _) => (b,f)
 				(* Mostrar qué se está haciendo, si showdebug *)
 				val _ = if showdebug then (print((tigerframe.name frame)^":\n");List.app (print o tigerit.tree) body; print("Argumentos: "); List.app (fn n => (print(Int.toString(n)); print("  "))) args; print("\n")) else ()
 
@@ -350,10 +381,13 @@ struct
 				(* Poner argumentos donde la función los espera *)
 				val formals = map (fn x => tigerframe.exp x (TEMP tigerframe.fp)) (tigerframe.formals frame)
 				val formalsValues = ListPair.zip(formals, args)
-				val _ = map (fn (x,y) => 
+				val _ = map (fn (x,y) =>  
 					case x of
 						TEMP t => storeTemp t y
-						| MEM m => storeMem (evalExp m) y) formalsValues
+						| MEM m => storeMem (evalExp m) y
+						| _ => raise Fail ("tigerinterp.sml (evalFun): no debe pasar! (2)\n")
+						    ) formalsValues
+						
 				(* Ejecutar la lista de instrucciones *)
 				val _ = execute body
 				val rv = loadTemp tigerframe.rv
@@ -363,5 +397,5 @@ struct
 			in
 				rv
 			end
-	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end
+	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end (* TODO Agregar el cero?*)
 end

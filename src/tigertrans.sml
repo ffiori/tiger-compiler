@@ -207,29 +207,43 @@ in
 end
 
 (* p.166 *)
-fun callExp (name,external,isproc,lev:level,ls:exp list) = 
-	let fun anidadas 0 = TEMP fp
-              | anidadas n = MEM (BINOP(PLUS, anidadas (n-1), CONST fpPrevLev))
-        val fpLev = if #level lev = !actualLevel then
-                        MEM (BINOP (PLUS, TEMP fp, CONST fpPrevLev))
-                    else if #level lev < !actualLevel then
-                        anidadas(!actualLevel - #level lev + 1)
-                    else TEMP fp
-        fun preparaArgs [] (rt,re) = (rt,re)
-          | preparaArgs (h::t) (rt,re) = 
-                    case h of
-                        Ex (CONST s) => preparaArgs t ((CONST s) :: rt, re)
-                      | Ex (NAME s) => preparaArgs t ((NAME s) :: rt, re)
-                      | Ex (TEMP s) => preparaArgs t ((TEMP s) :: rt, re)
-                      | _ => let val t' = newtemp()
-                             in preparaArgs t ((TEMP t')::rt, (MOVE (TEMP t', unEx h) :: re)) end
-        val (ta,ls') = preparaArgs ls ([],[]) (* TODO VER esto era: rev ls *)
-        val ta' = if external then ta else (fpLev :: ta)
-    in if isproc then Nx (seq (ls'@[EXP (CALL (NAME name, ta'))]))
-       else let val tmp = newtemp()
-            in Ex (ESEQ (seq(ls'@[EXP(CALL (NAME name, ta')), MOVE (TEMP tmp, TEMP rv)]), TEMP tmp))
-            end
-    end  
+
+
+
+fun callExp (name,extern,isproc,lev:level,ls) =           (* CARPETA: callExp(f, proc, extern, {level, ...}, la) *)
+    let fun menAMay 0 = TEMP fp
+        | menAMay n = MEM (BINOP (PLUS, menAMay(n-1), CONST fpPrevLev))
+        val fplev = if (#level lev) = getActualLev()
+                    then MEM (BINOP (PLUS, TEMP fp, CONST fpPrevLev))
+                    else if (#level lev) > getActualLev()
+                         then menAMay (getActualLev() - (#level lev) + 1)
+                         else TEMP fp
+
+        fun preparaArgs [] (rt,re) = (rt, re)
+        | preparaArgs (h::t) (rt,re) =  (* rt constantes,etc y re expresiones a evaluar *)
+            case h of
+            Ex(CONST s) => preparaArgs t ((CONST s)::rt, re)
+            |Ex(NAME s) => preparaArgs t ((NAME s)::rt, re)
+            |Ex(TEMP s) => preparaArgs t ((TEMP s)::rt, re)
+            |_ =>
+                let
+                    val t' = newtemp()
+                in preparaArgs t ((TEMP t')::rt, (MOVE(TEMP t', unEx h))::re)
+                end
+
+        val (ta, ls') = preparaArgs (ls) ([],[]) (* no hacemos rev, ya que se preparan al reves en preparaArgs *)
+        (* extern=true significa que la funcion es de runtime por lo cual no se pasara el fp *)
+        val ta' = if extern then ta else fplev::ta
+    in
+        if isproc (* La funcion no devuelve nada (TUnit) *)
+        then Nx (seq (ls'@[EXP(CALL(NAME name, ta'))]))
+        else let
+                val tmp = newtemp()
+             in
+                Ex (ESEQ ( seq(ls'@[EXP(CALL(NAME name, ta')), MOVE(TEMP tmp, TEMP rv)]), TEMP tmp))
+             end
+    end
+
 (*
 fun callExp (name,extern,isproc,lev:level,ls:exp list) =           (* CARPETA: callExp(f, proc, extern, {level, ...}, la) *)
     let fun menAMay 0 = TEMP fp
