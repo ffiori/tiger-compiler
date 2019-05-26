@@ -44,6 +44,7 @@ val argregs = []
 val callersaves = []
 val calleesaves = []
 
+val accessListInicial = [InFrame fpPrevLev]
 
 type frame = {
 	name: string,
@@ -52,6 +53,7 @@ type frame = {
 	actualArg: int ref,
 	actualLocal: int ref,
 	actualReg: int ref,
+	actualArgsLocation : (access list) ref
 }
 
 type register = string
@@ -66,27 +68,33 @@ fun newFrame{name, formals} = {
 	actualArg=ref argsInicial,
 	actualLocal=ref localsInicial,
 	actualReg=ref regInicial,
+	actualArgsLocation = ref accessListInicial
 }
 
 fun name(f: frame) = #name f
 
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
 
-fun formals({formals=f,...}: frame) = 
+fun formals({formals=f, actualArgsLocation = a,...}: frame) = !a 
+(*
 	let	fun aux(n, []) = []
 		| aux(n, h::t) = InFrame(n)::aux(n+argsGap, t)
 	in aux(argsInicial, f) end
-
+*)
 fun maxRegFrame(f: frame) = !(#actualReg f)
 fun allocArg (f: frame) b = 
 	case b of
 	true =>
 		let	val ret = (!(#actualArg f)+argsOffInicial)*wSz
-			val _ = #actualArg f := !(#actualArg f)+1        
+			val _ = #actualArg f := !(#actualArg f)+1
+            val a = #actualArgsLocation f
+            val _ = a := (!a) @ [InFrame ret]              
 		in	InFrame ret end
 	| false =>
         let
+            val a = #actualArgsLocation f
             val temp = tigertemp.newtemp()
+            val _ = a := (!a) @ [InReg temp]  
         in 
             InReg temp
         end
