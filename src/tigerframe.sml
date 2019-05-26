@@ -20,6 +20,8 @@ structure tigerframe :> tigerframe = struct
 open tigertree
 
 type level = int
+
+(* Ver pág 260 ! Explica un toque todo lo que se define acá. *)
 datatype access = InFrame of int | InReg of tigertemp.label
 
 val fp = "FP"				(* frame pointer *)
@@ -57,8 +59,8 @@ type frame = {
 type register = string
 
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
-	| STRING of tigertemp.label * string
-	
+              | STRING of tigertemp.label * string
+
 fun newFrame{name, formals} = {
 	name=name,
 	formals=formals,
@@ -70,7 +72,9 @@ fun newFrame{name, formals} = {
 }
 
 fun name(f: frame) = #name f
+
 fun string(l, s) = l^tigertemp.makeString(s)^"\n"
+
 fun formals({formals=f, actualArgsLocation = a,...}: frame) = !a 
 (*
 	let	fun aux(n, []) = []
@@ -101,12 +105,9 @@ fun allocLocal (f: frame) b =
 		in	#actualLocal f:=(!(#actualLocal f)-1); ret end
 	| false => InReg(tigertemp.newtemp())
 
-(*  SACAMOS LA e CUANDO LE AFANAMOS EL CODIGO A EZE *)
 fun exp(InFrame k) e = MEM(BINOP(PLUS, TEMP(fp), CONST k))
 | exp(InReg l) e = TEMP l
 
-(* fun exp(InFrame k) = MEM(BINOP(PLUS, TEMP(fp), CONST k))
-| exp(InReg l) = TEMP l *)
 
 fun externalCall(s, l) = CALL(NAME s, l)
 
