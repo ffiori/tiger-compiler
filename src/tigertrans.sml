@@ -207,78 +207,45 @@ in
 end
 
 (* p.166 *)
+fun callExp (name,extern:bool,isproc:bool,lev:level,ls:exp list) =           
+    let 
+		(* Calcular el static link *)
+	    fun saltar 0 = TEMP fp
+        | saltar n = MEM (BINOP (PLUS, saltar(n-1), CONST fpPrevLev))
 
-
-
-fun callExp (name,extern,isproc,lev:level,ls) =           (* CARPETA: callExp(f, proc, extern, {level, ...}, la) *)
-    let fun menAMay 0 = TEMP fp
-        | menAMay n = MEM (BINOP (PLUS, menAMay(n-1), CONST fpPrevLev))
-        val fplev = if (#level lev) = getActualLev()
+        val fp_loc = if (#level lev) = getActualLev()
                     then MEM (BINOP (PLUS, TEMP fp, CONST fpPrevLev))
                     else if (#level lev) > getActualLev()
-                         then menAMay (getActualLev() - (#level lev) + 1)
+                         then saltar (getActualLev() - (#level lev) + 1)
                          else TEMP fp
 
-        fun preparaArgs [] (rt,re) = (rt, re)
-        | preparaArgs (h::t) (rt,re) =  (* rt constantes,etc y re expresiones a evaluar *)
-            case h of
-            Ex(CONST s) => preparaArgs t ((CONST s)::rt, re)
-            |Ex(NAME s) => preparaArgs t ((NAME s)::rt, re)
-            |Ex(TEMP s) => preparaArgs t ((TEMP s)::rt, re)
-            |_ =>
-                let
-                    val t' = newtemp()
-                in preparaArgs t ((TEMP t')::rt, (MOVE(TEMP t', unEx h))::re)
-                end
-
-        val (ta, ls') = preparaArgs (ls) ([],[]) (* no hacemos rev, ya que se preparan al reves en preparaArgs *)
-        (* extern=true significa que la funcion es de runtime por lo cual no se pasara el fp *)
-        val ta' = if extern then ta else fplev::ta
+        (* Calcular la localizcion de cada arg + cod intemedio si es necesario *)
+		val locAndci = List.map
+					   (fn(exp) => (case exp of 
+							Ex(CONST s) => (CONST s, [])
+							|Ex(NAME s) => (NAME  s, [])
+							|Ex(TEMP s) => (TEMP  s, [])
+							| _         => 
+											(let val t' = newtemp()
+											in (TEMP t', [MOVE(TEMP t', unEx exp)])
+											end
+											)
+								)
+						)
+                       ls
+		
+		val ta = List.map (fn (a,b) => a) locAndci
+		val ci = List.concat (List.map (fn (a,b) => b) locAndci)
+        val args = if extern then ta else fp_loc::ta (* extern functions do not require static link *)
     in
-        if isproc (* La funcion no devuelve nada (TUnit) *)
-        then Nx (seq (ls'@[EXP(CALL(NAME name, ta'))]))
+        if isproc 
+        then Nx (seq (ci@[EXP(CALL(NAME name,args))]))
         else let
                 val tmp = newtemp()
              in
-                Ex (ESEQ ( seq(ls'@[EXP(CALL(NAME name, ta')), MOVE(TEMP tmp, TEMP rv)]), TEMP tmp))
+                Ex (ESEQ ( seq(ci@[EXP(CALL(NAME name, args)), MOVE(TEMP tmp, TEMP rv)]), TEMP tmp))
              end
     end
-
-(*
-fun callExp (name,extern,isproc,lev:level,ls:exp list) =           (* CARPETA: callExp(f, proc, extern, {level, ...}, la) *)
-    let fun menAMay 0 = TEMP fp
-        | menAMay n = MEM (BINOP (PLUS, menAMay(n-1), CONST fpPrevLev))
-        val fplev = if (#level lev) = getActualLev()
-                    then MEM (BINOP (PLUS, TEMP fp, CONST fpPrevLev))
-                    else if (#level lev) > getActualLev()
-                         then menAMay (getActualLev() - (#level lev) + 1)
-                         else TEMP fp
-
-        fun preparaArgs [] (rt,re) = (rt, re)
-        | preparaArgs (h::t) (rt,re) =  (* rt constantes,etc y re expresiones a evaluar *)
-            case h of
-            Ex(CONST s) => preparaArgs t ((CONST s)::rt, re)
-            |Ex(NAME s) => preparaArgs t ((NAME s)::rt, re)
-            |Ex(TEMP s) => preparaArgs t ((TEMP s)::rt, re)
-            |_ =>
-                let
-                    val t' = newtemp()
-                in preparaArgs t ((TEMP t')::rt, (MOVE(TEMP t', unEx h))::re)
-                end
-
-        val (ta, ls') = preparaArgs (ls) ([],[]) (* no hacemos rev, ya que se preparan al reves en preparaArgs *)
-        (* extern=true significa que la funcion es de runtime por lo cual no se pasara el fp *)
-        val ta' = if extern then ta else fplev::ta
-    in
-        if isproc (* La funcion no devuelve nada (TUnit) *)
-        then Nx (seq (ls'@[EXP(CALL(NAME name, ta'))]))
-        else let
-                val tmp = newtemp()
-             in
-                Ex (ESEQ ( seq(ls'@[EXP(CALL(NAME name, ta')), MOVE(TEMP tmp, TEMP rv)]), TEMP tmp))
-             end
-    end
-	*)
 
 fun letExp ([], body) = Ex (unEx body)
  |  letExp (inits, body) = Ex (ESEQ(seq inits,unEx body))
