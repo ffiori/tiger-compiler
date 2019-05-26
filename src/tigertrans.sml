@@ -242,7 +242,7 @@ fun callExp (name,extern:bool,isproc:bool,lev:level,ls:exp list) =
         then Nx (seq (ci@[EXP(CALL(NAME name,args))]))
         else let
                 val tmp = newtemp()
-             in
+             in (* page 178: assign each RV into a frash temporary register *)
                 Ex (ESEQ ( seq(ci@[EXP(CALL(NAME name, args)), MOVE(TEMP tmp, TEMP rv)]), TEMP tmp))
              end
     end

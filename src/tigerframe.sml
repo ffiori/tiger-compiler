@@ -53,7 +53,7 @@ type frame = {
 	actualArg: int ref,
 	actualLocal: int ref,
 	actualReg: int ref,
-	actualArgsLocation : (access list) ref
+	actualArgsLocation : (access list) ref (* This is just for debug, used by the interpreter *)
 }
 
 type register = string
