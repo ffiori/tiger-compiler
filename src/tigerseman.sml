@@ -333,69 +333,53 @@ fun transExp(venv, tenv) =
                                             extern = false})
                               end )
                           lf
-                (* 2.b - Agregar las entradas a venv, pisaando las variables del mismo nombre-  p515 name spaces. *)
-                val venv' = List.foldr
+                (* 2.b - Agregar las entradas a venv, pisando las variables del mismo nombre-  p515 name spaces. *)
+                val venv' = List.foldr  (* why foldr?? *)
                             ( fn ((n,fe),env) => tabRInserta(n,fe,env) )
                             venv
                             lpr
 
                 (* 3 - En lfyvenvs guardo las funciones con el environment venv' aumentado con los argumentos de la función como variables. *)
-                val lfyvenvs = List.map
-
-
+                val ci  = List.map
 
                                (fn (func as ({body,name,params,result},pos)) => 
 
-
                                 let
-
-                                    val level = case tabBusca(name,venv') of
-                                                SOME (Func{level,...}) => level
+									val _ = preFunctionDec()
+							     	val (level,tyresult) = case tabBusca(name,venv') of
+                                                SOME (Func{result,level,...}) => (level,result)
                                                 |_ => error("No debería pasar, función "^name,pos)
-                                                
-                                    
-                                    val fvenv = List.foldr 
+                                 	val _ = pushLevel level 
+
+                                    val venv'' = List.foldr 
                                                     (fn ({name,escape,typ},env) => 
 													    let 
 															val acc = allocArg (topLevel()) (!escape)
+															val levep = getActualLev()
 														in
-                                                        	tabRInserta(name, Var {ty=transTy(tenv,typ,pos), access=acc, level=getActualLev()}, env)
+                                                        	tabRInserta(name, Var {ty=transTy(tenv,typ,pos), 
+															                       access=acc, 
+																				   level=getActualLev()}, env)
 														end
 													)
                                                     venv'
                                                     params
-								in (func, fvenv) end)
+									
+								    val {exp=exp,ty=tybody} = transExp(venv'',tenv) body
 
+           							val _ = if tiposIguales tybody tyresult then () else error("Tipo de retorno de la funcion y el tipo de su body no coinciden",pos)
+
+
+									val _ = popLevel()
+									val _ = postFunctionDec()
+								in
+									functionDec(exp, level, (tyresult = TUnit))
+								end)
 
                                lf
 
-                (* 4 - et = expresiones traducidas - Contiene expresiones traducidas de los body de las funciones *)
-                val et = List.map 
-                         (fn (({name,params,result,body},pos),fvenv) =>  (* Chequea que el body esté bien tipado y coincida con el tipo de retorno *)
-                             let 
-							     val _ = preFunctionDec()
-							     val level = case tabBusca(name,venv') of
-                                                SOME (Func{level,...}) => level
-                                                |_ => error("No debería pasar, función "^name,pos)
-                                 val _ = pushLevel level 
-								 
-                                 val {exp=exp,ty=tybody} = transExp(fvenv,tenv) body
-                                 val (ci,tyres) = ( case result of
-                                                 NONE => (functionDec(exp,level,true),TUnit)
-                                                |SOME tr => (case tabBusca(tr,tenv) of 
-                                                                 NONE => error("Tipo de retorno "^tr^" no existe! Se debería detectar antes...",pos)
-                                                                |SOME t => (functionDec(exp,level,false),t) ) )
+                val codint = List.foldl (fn (exp,els) => exp::els) el ci
 
-                                 val _ = popLevel()
-	                             val _ = postFunctionDec()
-                             in if tiposIguales tybody tyres
-                                then {exp=ci,ty=tybody}
-                                else error("Tipo de retorno no coincide con el tipo del cuerpo de la función "^name,pos) end)
-                         lfyvenvs
-			
-                val codint = List.foldl (fn ({exp,ty},els) => exp::els) el et
-                (* Por el momento ignoro el valor et, luego voy a tener que almacenar el código intermedio en algún lado para poder ir usando las funciones más adelante.
-                 * Si todo está bien tipado, no va a saltar error. Por eso tiro et al carajo por ahora. *)
             in transDec(venv',tenv,codint,ts) end
         | transDec (venv,tenv,el,(TypeDec lt)::ts) = (*lt: batch de declaraciones de tipos*)
             let val sortedNames = Listsort.sort 
