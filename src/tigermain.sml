@@ -5,6 +5,7 @@ open tigerseman
 open tigertrans
 open tigerframe
 open tigerinterp
+open tigercodegen
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -50,9 +51,15 @@ fun main(args) =
                         | STRING _ => true
                   )
                   fragmentos
-    val canonProcs = List.map (fn PROC {body=body, frame=frame} => (if inter then print (tigerframe.name(frame)^"\n") else () ; (canonFunction body, frame))) procs
+    val canonProcs = List.map (fn PROC {body=body, frame=frame} => ( (canonFunction body, frame))) procs
     val canonStrings = List.map (fn STRING x => x) strings
     val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
+
+		fun procesarBody (bs,frame) = map (fn b => tigercodegen.codegen frame b ) bs
+
+		val instr = List.map procesarBody canonProcs 
+
+
 	in
 		print "Success\n"
 	end	handle Fail s => print("Fail: "^s)
