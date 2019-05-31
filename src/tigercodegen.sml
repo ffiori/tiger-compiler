@@ -21,8 +21,8 @@ fun codegen frame stm = (*se aplica a cada funcion*)
               |tigertree.LABEL l  => emit(LABEL{ assem=l^":\n", lab=l })
               |tigertree.MOVE(tigertree.MEM(e1),e2) => (  (* Store in memory: M[e1] <- e2 *)
                 case e1 of
-                  BINOP(PLUS,e,CONST i) =>     (*  M[e+imm] <- e2 *)
-                    emit(OPER{assem = "SW `s0, "^Int.toString i^", `s1", 
+                  (* BINOP(PLUS,e,CONST i) =>     (*  M[e+imm] <- e2 *)
+                    emit(OPER{assem = "SW `s0, "^Int.toString i^"(`s1)", 
                               src = [], 
                               dst = [munchExp e,munchExp e2], 
                               jump = NONE})
@@ -35,11 +35,11 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                     emit(OPER{assem = "SW `x0, "^Int.toString i^", `s0", 
                               src = [], 
                               dst = [munchExp e2], 
-                              jump = NONE})
-                  | _         =>  (* M[e1] <- e2 . No distinguimos M[e1] <- M[e2] porque nuestra arquitectura no tiene MOVE*)
-                    emit(OPER{assem = "SW `s0, `x0, `s1", 
-                              src = [], 
-                              dst = [munchExp e1,munchExp e2], 
+                              jump = NONE}) *)
+                   _         =>  (* M[e1] <- e2 . No distinguimos M[e1] <- M[e2] porque nuestra arquitectura no tiene MOVE*)
+                    emit(OPER{assem = "SW `s0, 0(`s1)", 
+                              src = [munchExp e2,munchExp e1], 
+                              dst = [], 
                               jump = NONE})
 
               )
@@ -50,7 +50,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                               jump = NONE}) 
 
               (* QUE ONDA CON ESTE QUE SIGUE. VA??*)
-              |(tigertree.MOVE (TEMP t1,BINOP(MINUS, TEMP t2, CONST i)) ) =>  (* CONSIDERAR TODOS LOS CASOS QUE USAN FP -SP TODO *)
+              |(tigertree.MOVE (TEMP t1,BINOP(PLUS, TEMP t2, CONST i)) ) =>  (* CONSIDERAR TODOS LOS CASOS QUE USAN FP -SP TODO *)
                 if t1 = tigerframe.sp andalso t2 = tigerframe.sp then (*fp y sp no tienen que aparecer en ningun momento en src ni dst porque no pueden ser elegidos para guardar un estado intermedio*)
                     emit(OPER{assem = "MOV SP, SP-"^Int.toString i^"\n", src = [], dst = [], jump = NONE})
                 else 
@@ -80,12 +80,12 @@ fun codegen frame stm = (*se aplica a cada funcion*)
         in
         case e of
           (TEMP t) => t
-          | (CONST i) => (* check: should we use LUI rd, imm?? *)
-            result (fn r => emit(OPER{assem="ADDI `d0, `x0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
+          | (CONST i) =>
+            result (fn r => emit(OPER{assem="LI `d0, "^Int.toString i^"\n",
                                       dst=[r], 
                                       src=[], 
                                       jump=NONE}))
-          | (BINOP(b, CONST i, e1)) =>
+          (*| (BINOP(b, CONST i, e1)) =>
             result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, "^    Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[munchExp e1], 
@@ -94,10 +94,9 @@ fun codegen frame stm = (*se aplica a cada funcion*)
             result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, "^    Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[munchExp e1], 
-                                            jump=NONE}))
-
+                                            jump=NONE})) *) (* revisar imm grandes en const *)
           | (BINOP (b, e1, e2)) =>
-            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, `s1\n", 
+            result (fn r => emit(OPER{assem=(get_code b false)^" `d0, `s0, `s1\n", 
                                             dst=[r],
                                             src=[munchExp e1, munchExp e2], 
                                             jump=NONE}))
