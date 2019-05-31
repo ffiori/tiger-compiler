@@ -134,7 +134,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                             jump=NONE}))
 
           | (NAME _) => tigertemp.newtemp() (* TO DO *)
-          | (CALL _) => tigertemp.newtemp() (* TO DO *)
+          | (CALL _) =>  raise Fail ("[munchExp] There should not be CALL nodes outside EXP (canonized tree)") 
           | (ESEQ _ ) =>  raise Fail ("[munchExp] There should not be ESEQ nodes anymore (canonized tree)") 
           | _         =>  raise Fail ("[munchExp] Unknown expression")
         end
