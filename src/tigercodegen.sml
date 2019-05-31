@@ -1,8 +1,8 @@
 structure tigercodegen :> tigercodegen = struct
 
-	open tigertree
-	open tigerassem
-	open tigerframe
+    open tigertree
+    open tigerassem
+    open tigerframe
 
 fun codegen frame stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:instr list) (*lista de instrucciones que va a ir mutando*)
@@ -44,18 +44,18 @@ fun codegen frame stm = (*se aplica a cada funcion*)
 
               )
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
-                    emit(OPER{assem = "ADD `d0, `x0, `s0", 
-                              src = [munchExp e2], 
-                              dst = [t1], 
-                              jump = NONE}) 
+                    if (t1=tigerframe.sp orelse t1=tigerframe.fp)
+                    then
+                        emit(OPER{assem = "ADD "^t1^", `x0, `s0", 
+                        src = [munchExp e2], 
+                        dst = [], 
+                        jump = NONE}) 
+                    else
+                        emit(OPER{assem = "ADD `d0, `x0, `s0", 
+                        src = [munchExp e2], 
+                        dst = [t1], 
+                        jump = NONE}) 
 
-              (* QUE ONDA CON ESTE QUE SIGUE. VA??*)
-              |(tigertree.MOVE (TEMP t1,BINOP(PLUS, TEMP t2, CONST i)) ) =>  (* CONSIDERAR TODOS LOS CASOS QUE USAN FP -SP TODO *)
-                if t1 = tigerframe.sp andalso t2 = tigerframe.sp then (*fp y sp no tienen que aparecer en ningun momento en src ni dst porque no pueden ser elegidos para guardar un estado intermedio*)
-                    emit(OPER{assem = "MOV SP, SP-"^Int.toString i^"\n", src = [], dst = [], jump = NONE})
-                else 
-                    emit(OPER{assem = "MOV 'd0, 's0-"^Int.toString i^"\n", src = [t2], dst = [t1], jump = NONE})
-				
               | EXP (CALL (e,args)) => emit (OPER{ assem = "CALL 's0\n", (* page 204. CHECK. *)
                                                  src = munchExp(e)::munchArgs(0,args),
                                                  dst = calldefs,
@@ -85,6 +85,16 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       dst=[r], 
                                       src=[], 
                                       jump=NONE}))
+          | (BINOP (b, TEMP sp, CONST i)) =>
+            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^sp^", "^Int.toString i^"\n", 
+                                            dst=[r], 
+                                            src=[], 
+                                            jump=NONE}))
+          | (BINOP (b, TEMP fp, CONST i)) =>
+            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^fp^", "^Int.toString i^"\n", 
+                                            dst=[r], 
+                                            src=[], 
+                                            jump=NONE}))
           (*| (BINOP(b, CONST i, e1)) =>
             result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, "^    Int.toString i^"\n", 
                                             dst=[r], 
@@ -147,8 +157,8 @@ fun codegen frame stm = (*se aplica a cada funcion*)
 
         and munchArgs(_,_) = [] (* TO DO *)
             
-	in
-		munchStm stm ; rev(!ilist)
-	end
+    in
+        munchStm stm ; rev(!ilist)
+    end
 
 end
