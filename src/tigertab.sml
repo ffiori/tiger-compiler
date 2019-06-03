@@ -9,6 +9,8 @@ exception noExiste
 exception noExisteS of string
 
 fun tabNueva() = mkPolyTable(100, noExiste)
+fun tabNuevaEq funEq = mkTable (hash,funEq) (100, noExiste)
+
 fun fromTab t =
 	let	val t' = tabNueva()
 	in	apply (fn x => insert t' x) t; t' end

@@ -6,6 +6,7 @@ exception yaExiste of string
 exception noExiste
 exception noExisteS of string
 val tabNueva : unit -> (''a, 'b) Tabla
+val tabNuevaEq : ('a * 'a -> bool) -> ('a, 'b) Tabla
 val fromTab : (''a, 'b) Tabla -> (''a, 'b) Tabla
 val name : 'a -> 'a
 val tabEsta : ''a * (''a, 'b) Tabla -> bool
