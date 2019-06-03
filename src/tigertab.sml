@@ -10,6 +10,13 @@ exception noExisteS of string
 
 fun tabNueva() = mkPolyTable(100, noExiste)
 fun tabNuevaEq funEq = mkTable (hash,funEq) (100, noExiste)
+(*
+val mkTable : (('a -> word) * (('a * 'a) -> bool)) -> (int * exn)
+      -> ('a,'b) hash_table
+(* Given a hashing function and an equality predicate (funEq), create a new table;
+ * the int is a size hint and the exception is to be raised by find.
+ *)
+*)
 
 fun fromTab t =
 	let	val t' = tabNueva()

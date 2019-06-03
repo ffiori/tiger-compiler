@@ -41,7 +41,6 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                               src = [munchExp e2,munchExp e1], 
                               dst = [], 
                               jump = NONE})
-
               )
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
                     if (t1=tigerframe.sp orelse t1=tigerframe.fp)
@@ -61,7 +60,8 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                                  dst = calldefs,
                                                  jump = NONE})
 
-              | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
+              | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL\n") (* because of canonization *)
+              | _ => raise Fail "[munchStm] TODO Emilio \n"
               (*TODO: JUMP, CJUMP*)
 
       (* munchEXP and muncStm will produce tigerassem.Assem instructions as side effects *)

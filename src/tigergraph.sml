@@ -5,7 +5,7 @@ En caso de emergencia ver implementación alternativa en https://www.cs.princeto
 structure tigergraph :> tigergraph =
 struct
 
-open Dynarray
+    open Dynarray
 
     type node' = int
     type temp = tigertemp.temp
