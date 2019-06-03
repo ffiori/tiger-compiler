@@ -2,7 +2,7 @@
 Código adaptado de acá https://www.cs.princeton.edu/~appel/modern/ml/chap10/graph.sml
 En caso de emergencia ver implementación alternativa en https://www.cs.princeton.edu/~appel/modern/ml/altgraph.html *)
 
-structure tigergraph =
+structure tigergraph :> tigergraph =
 struct
 
 open Dynarray
@@ -76,6 +76,8 @@ open Dynarray
 
     val mk_edge = diddle_edge (op ::)
     val rm_edge = diddle_edge delete
+    
+    type 'info table = (node,'info) tigertab.Tabla (* Para guardar informacion de los nodos*)
 
     fun nodename(g,i:int) = "n" ^ Int.toString(i)
 
