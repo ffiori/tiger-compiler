@@ -2,7 +2,7 @@ signature tigerliveness = (*page 225*)
 sig
 (*
     datatype igraph =
-        IGRAPH of 
+        IGRAPH of
             {graph: tigergraph.graph, (* Interference graph *)
              tnode: tigertemp.temp -> tigergraph.node,
              gtemp: tigergraph.node -> tigertemp.temp, (* Inverse mapping of tnode *)
@@ -12,9 +12,9 @@ sig
 
     type igraph = tigerflow.flowgraph
 
-    (* Returns an interference graph and a table mapping each flowgraph node 
+    (* Returns an interference graph and a table mapping each flowgraph node
      * to the set of temporaries that are live-out at that node. *)
-    val interferenceGraph : 
+    val interferenceGraph :
       tigerflow.flowgraph -> igraph * (tigergraph.node -> tigertemp.temp list)
 
     (* For debugging *)

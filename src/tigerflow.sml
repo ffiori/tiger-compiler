@@ -36,11 +36,10 @@ struct
           val instr_node_pairs = create_nodes il
 
           (* 2 - Store jump references *)
-          fun is_label (LABEL _) = true
-            | is_label _         = false
-
-          val labels     = List.filter (fn (i,_) => is_label i) instr_node_pairs
-          val ord_labels = List.map (fn (LABEL{assem,lab=l}, node) => (l,node)) labels
+          val ord_labels = List.mapPartial
+						   ( fn (LABEL{assem,lab=l}, node) => SOME (l,node)
+						       | _ => NONE )
+						   instr_node_pairs
           val label_ref_nodes = tabInserList(tabNueva(), ord_labels)  (* For each label, save the node that follows it on a table. *)
 
           (* 3 - Add edges to the graph *)
@@ -65,16 +64,19 @@ struct
           val _ = create_edges instr_node_pairs
 
           (* 4 - The graph is ready. Get extra information required for the FGRAPH: *)
+          fun is_label (LABEL _) = true
+            | is_label _         = false
+            
           val nodes_not_labels = List.filter (fn (x,n) => not(is_label x)) instr_node_pairs
 
           fun get_def (OPER {assem=_,dst=d,src=s,...},n)  = (n,d)
             | get_def (MOVE {assem=_,dst=d,src=s},n)      = (n,[d])
-            | get_def _ = raise Fail "[get_def] Should not happen. Are there any LABEL l remaining?"
+            | get_def _ = raise Fail "[get_def] Should not happen. Is there any LABEL l remaining?"
           val def = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.map get_def nodes_not_labels)
 
           fun get_src (OPER {assem=_,dst=d,src=s,...},n)  = (n,s)
             | get_src (MOVE {assem=_,dst=d,src=s},n)      = (n,[s])
-            | get_src _ = raise Fail "[get_src] Should not happen. Are there any LABEL l remaining?"
+            | get_src _ = raise Fail "[get_src] Should not happen. Is there any LABEL l remaining?"
           val use = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.map get_src nodes_not_labels)
 
           fun is_move (MOVE _,n)  = (n,true)

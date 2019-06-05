@@ -6,6 +6,7 @@ open tigertrans
 open tigerframe
 open tigerinterp
 open tigercodegen
+open tigerflow
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -36,28 +37,27 @@ fun main(args) =
         val _ = transProg(expr);
         val fragmentos = tigertrans.getResult()
         val _ = if ir then print(tigertrans.Ir(fragmentos)) else ()
+        
         val canonFunction = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize) (* : tigertree.stm -> tigertree.stm list *)
-        val procs = List.filter
-                    (fn frag =>
-                        case frag of
-                            PROC _ => true
-                          | STRING _ => false
-                    )
-                    fragmentos
-        val strings = List.filter
-                      (fn frag =>
-                          case frag of
-                              PROC _ => false
-                            | STRING _ => true
-                      )
-                      fragmentos
-        val canonProcs = List.map (fn PROC {body=body, frame=frame} => ( (canonFunction body, frame))) procs
-        val canonStrings = List.map (fn STRING x => x) strings
+
+        fun canonizeProcs (PROC {body=body, frame=frame}) = SOME (canonFunction body, frame)
+          | canonizeProcs _ = NONE (* ignores STRING x *)
+        fun canonizeStrings (STRING x) = SOME x
+          | canonizeStrings _ = NONE (* ignores PROC x *)
+          
+        val canonProcs = List.mapPartial canonizeProcs fragmentos   (* List.mapPartial doesn't save NONE results, and unpacks SOME x into x. Like List.map o List.filter *)
+        val canonStrings = List.mapPartial canonizeStrings fragmentos
+        
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
         fun procesarBody (bs,frame) = map (fn b => tigercodegen.codegen frame b ) bs
 
-        val instr = List.map procesarBody canonProcs 
+        (* instr : instr list list list *)
+        val instr = List.map procesarBody canonProcs
+        
+        (* flow_graphs : (flowgraph * tigergraph.node list) list list *)
+        val flow_graphs = List.map (fn iis => List.map tigerflow.instrs2graph iis) instr
+        
     in
         print "Success\n"
     end handle Fail s => print("Fail: "^s)
