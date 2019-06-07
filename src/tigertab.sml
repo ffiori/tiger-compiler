@@ -71,8 +71,22 @@ fun tabFiltraKey(f, t) =
 fun tabPrimer(f, t) = hd(List.filter (fn(a, b) => f b) (listItems t))
 fun tabClaves t = List.map (fn(x, y) => x) (listItems t)
 
-infix ==
-fun (map1 : ('a, 'b) Tabla) == (map2 : ('a, 'b) Tabla) = true (*TODO*)
+fun tabEquals(t1 : ('a, 'b) Tabla, t2 : ('a, 'b) Tabla, compFunc : ('b * 'b -> bool)) =
+let
+    fun compareKV(k,v,table) =
+            case tabBusca(k,table) of
+                SOME v' => compFunc(v,v')
+                | NONE => false
+        
+    val l1 = tabAList(t1)
+    val answer = 
+        List.foldl
+        (fn ((k,v),bool) => (compareKV(k,v,t2)) andalso bool)
+        true
+        l1
+in
+    answer
+end
 
 infix --
 fun (map1 : ('a, 'b) Tabla) -- (map2 : ('a, 'b) Tabla) =

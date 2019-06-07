@@ -28,8 +28,7 @@ val tabFiltraKey : ('a -> bool) * ('a, 'b) Tabla -> ('a, 'b) Tabla
 val tabPrimer : ('b -> bool) * ('a, 'b) Tabla -> ('a * 'b)
 val tabClaves : ('a, 'b) Tabla -> 'a list
 
-infix ==
-val == : ('a, 'b) Tabla * ('a, 'b) Tabla -> bool
+val tabEquals : ('a, 'b) Tabla * ('a, 'b) Tabla * ('b * 'b -> bool) -> bool
 
 infix --
 val -- : ('a, 'b) Tabla * ('a, 'b) Tabla -> ('a, 'b) Tabla

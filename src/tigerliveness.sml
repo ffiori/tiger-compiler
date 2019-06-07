@@ -4,7 +4,7 @@ struct
     open tigergraph
     open tigerflow
     open tigertab
-    infix == -- U
+    infix -- U
 
     type igraph = tigerflow.flowgraph
     
@@ -61,8 +61,10 @@ struct
                 List.app
                 (fn node => computeLivenessForNode(node))
                 (tigergraph.nodes(#control flow_graph))
+            
+            fun compareSets(s1,s2) = tabEquals(s1,s2,(fn (x,y)=>x=y))
         in
-            if (livein' == livein) andalso (liveout' == liveout)
+            if tabEquals(livein', livein, compareSets) andalso tabEquals(liveout', liveout, compareSets)
             then ()
             else computeLiveness (tigerflow.FGRAPH flow_graph)
         end
