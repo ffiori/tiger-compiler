@@ -61,6 +61,30 @@ fun tabFiltra(f, t) =
 			(List.filter (fn(a, b) => f b) l);
 		t'
 	end
+fun tabFiltraKey(f, t) =
+	let	val t' = copy t
+        val _ = filter (fn (a,b)=>f(a)) t'
+	in
+		t'
+	end
+    
 fun tabPrimer(f, t) = hd(List.filter (fn(a, b) => f b) (listItems t))
 fun tabClaves t = List.map (fn(x, y) => x) (listItems t)
+
+infix ==
+fun (map1 : ('a, 'b) Tabla) == (map2 : ('a, 'b) Tabla) = true (*TODO*)
+
+infix --
+fun (map1 : ('a, 'b) Tabla) -- (map2 : ('a, 'b) Tabla) =
+    tabFiltraKey(
+    (fn a => not (tabEsta(a,map2))),
+    map1)
+
+infix U
+fun (t1 : ('a, 'b) Tabla) U (t2 : ('a, 'b) Tabla) =
+let val t1' = copy t1
+in
+    tabInserList(t1', tabAList(t2))
+end
+
 end

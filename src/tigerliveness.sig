@@ -1,6 +1,7 @@
 signature tigerliveness = (*page 225*)
 sig
 (*
+    (* El libro usa este tipo, no sé para qué. Lo cambié a lo de abajo. *)
     datatype igraph =
         IGRAPH of
             {graph: tigergraph.graph, (* Interference graph *)

@@ -1,62 +1,75 @@
 structure tigerliveness :> tigerliveness =
 struct
-(*
-    datatype igraph =
-        IGRAPH of 
-            {graph: tigergraph.graph, (* Interference graph *)
-             tnode: tigertemp.temp -> tigergraph.node,
-             gtemp: tigergraph.node -> tigertemp.temp, (* Inverse mapping of tnode *)
-             moves: (tigergraph.node * tigergraph.node) list} (* Hint for the register allocator, if MOVE m n is in the list,
-                                                               * it would be nice to assign m and n the same register. *)
-*)
+
+    open tigergraph
+    open tigerflow
+    open tigertab
+    infix == -- U
+
     type igraph = tigerflow.flowgraph
     
     type liveSet = (tigertemp.temp, unit) tigertab.Tabla
     type liveMap = (tigergraph.node, liveSet) tigertab.Tabla 
     
-    val livein = tigertab.tabNueva()
-    val liveout = tigertab.tabNueva()
-(*
-    val global_live_map : liveMap = tigertab.tabNueva()
-*)
-(*
-  datatype flowgraph = FGRAPH of {control: tigergraph.graph,
-                                  def: (tigertemp.temp list) tigergraph.table,
-                                  use: (tigertemp.temp list) tigergraph.table,
-                                  ismove: bool tigergraph.table}
-*)
+    val livein : liveMap = tigertab.tabNuevaEq(tigergraph.eq)
+    val liveout : liveMap = tigertab.tabNuevaEq(tigergraph.eq)
     
-    fun build_live_map (tigerflow.FGRAPH flow_graph) =
-(*
-        recorrer todos los nodos n y llenar livein[n] y liveout[n]
-        page 214
-*)
+    fun computeLiveness (tigerflow.FGRAPH flow_graph) =
+    (* Recorrer todos los nodos n y llenar livein[n] y liveout[n]. Page 214. *)
         let
-            fun computeLiveness(current_livein, current_liveout, node) =
+            fun computeLivenessForNode(current_node : tigergraph.node) =
                 let
-                    val def_map = #def flow_graph
+                    val def_map : ((node, tigertemp.temp list) tigertab.Tabla) = #def flow_graph
                     val use_map = #use flow_graph
-(*
-                    val def =
-                        case tigertab.tabBusca(node,def_map) of
+
+                    val def : (tigertemp.temp list) = 
+                        case tigertab.tabBusca(current_node, def_map) of
                             SOME temp_list => temp_list
-                          | NONE => raise Fail ("Node "^tigergraph.nodename(node)^" doesn't exist in the flow graph.\n")
-*)
-                    val current_livein' = current_livein
-                    val current_liveout' = current_liveout
+                          | NONE => raise Fail ("Node "^tigergraph.nodename(current_node)^" doesn't exist in the flow graph.\n")
+                    val use : (tigertemp.temp list) = 
+                        case tigertab.tabBusca(current_node, use_map) of
+                            SOME temp_list => temp_list
+                          | NONE => raise Fail ("Node "^tigergraph.nodename(current_node)^" doesn't exist in the flow graph.\n")      
                     
+                    (* livein_node = use[n] U (liveout[n] - def[n]) *)     
+                    val use_node : liveSet = 
+                        List.foldl
+                        (fn (temp,live_set) => tabInserta(temp, (), live_set))
+                        (tabNueva())
+                        use
+                    val old_liveout_node = tabSaca(current_node, liveout)
+                    val def_table = tabInserList(tabNueva(), List.map (fn x=>(x,())) def)
+                    val livein_node = use_node U (old_liveout_node -- def_table)
+
+                    (* liveout_node = U (in[s]) forall s in succ[n] *)
+                    val liveout_node : liveSet = 
+                        List.foldl
+                        (fn (n,t) => t U (tabSaca(n, livein)))
+                        (tabNueva())
+                        (succ(current_node)) (* succ : node -> node list *)
+
+                    val _ = tabInserta(current_node, livein_node, livein)
+                    val _ = tabInserta(current_node, liveout_node, liveout)
                 in
                     ()
                 end
+            
+            val livein' = livein
+            val liveout' = liveout
+            
+            val _ =
+                List.app
+                (fn node => computeLivenessForNode(node))
+                (tigergraph.nodes(#control flow_graph))
         in
-            List.app
-            (fn n => computeLiveness(tigertab.tabNueva(), tigertab.tabNueva(), n))
-            (tigergraph.nodes(#control flow_graph))
+            if (livein' == livein) andalso (liveout' == liveout)
+            then ()
+            else computeLiveness (tigerflow.FGRAPH flow_graph)
         end
     
     fun interferenceGraph flow_graph = 
         let
-            val _ = build_live_map flow_graph
+            val _ = computeLiveness flow_graph
 (*
         at each flow node n add edges (di,tj) forall di in def(n) and forall ti in global_live_map(n)
 *)
