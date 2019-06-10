@@ -7,6 +7,7 @@ open tigerframe
 open tigerinterp
 open tigercodegen
 open tigerflow
+open tigerliveness
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -50,7 +51,11 @@ fun main(args) =
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
-        fun procesarBody (bs,frame) = map (fn b => tigercodegen.codegen frame b ) bs
+        fun procesarBody (bs,frame) = map (fn b => tigercodegen.codegen frame b) bs
+
+(* Creo que se debería llamar por acá (en procesarBody) a alloc : instr list * frame -> instr list * allocation
+* en vez de hacer todo en el main. Tipo alloc debería hacer los grafos y escupir el código
+* que se va a usar posta, con los registros ya usados. *)
 
         (* instr : instr list list list *)
         val instr = List.map procesarBody canonProcs
@@ -58,6 +63,14 @@ fun main(args) =
         (* flow_graphs : (flowgraph * tigergraph.node list) list list *)
         val flow_graphs = List.map (fn iis => List.map tigerflow.instrs2graph iis) instr
         
+        (* interf_graphs : ((igraph * (tigergraph.node -> tigertemp.temp list)) * tigergraph.node list) list list *)
+        val interf_graphs = 
+            List.map
+            (fn lfs => 
+                List.map
+                (fn (flow_graph, node_list) => (interferenceGraph flow_graph, node_list))
+                lfs)
+            flow_graphs
     in
         print "Success\n"
     end handle Fail s => print("Fail: "^s)

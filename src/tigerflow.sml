@@ -74,10 +74,6 @@ struct
             | get_def _ = raise Fail "[get_def] Should not happen. Is there any LABEL l remaining?"
           val def = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.map get_def nodes_not_labels)
 
-(*
-val _ = tigertab.tabBusca(tigergraph.newNode(tigergraph.newGraph()),def)
-*)
-
           fun get_src (OPER {assem=_,dst=d,src=s,...},n)  = (n,s)
             | get_src (MOVE {assem=_,dst=d,src=s},n)      = (n,[s])
             | get_src _ = raise Fail "[get_src] Should not happen. Is there any LABEL l remaining?"

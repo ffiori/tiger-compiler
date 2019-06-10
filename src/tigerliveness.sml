@@ -71,12 +71,14 @@ struct
     
     fun interferenceGraph flow_graph = 
         let
-            val _ = computeLiveness flow_graph
-(*
-        at each flow node n add edges (di,tj) forall di in def(n) and forall ti in global_live_map(n)
-*)
+            val _ = computeLiveness flow_graph (* esto modifica el flow_graph o hay que meter por referencia y esas cosas? check por las dudas *)
+
+            fun getTempList node =
+                List.map
+                (fn (x,y) => x)
+                (tabAList(tabSaca(node,liveout)))
         in
-            (flow_graph,(fn x=>[]))
+            (flow_graph, getTempList)
         end
         
 end
