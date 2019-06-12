@@ -30,9 +30,9 @@ datatype access = InFrame of int | InReg of tigertemp.label
 val fp = "FP"               (* frame pointer *)
 val sp = "SP"               (* stack pointer *)
 val rv = "RV"               (* return value  *)
-val ov = "OV"               (* overflow value (edx en el 386) *)
-val wSz = 4                 (* word size in bytes *)
-val log2WSz = 2             (* base two logarithm of word size in bytes *)
+val zero = "ZERO"
+val wSz = 8                 (* word size in bytes *)
+val log2WSz = 3             (* base two logarithm of word size in bytes *)
 val fpPrev = 0              (* offset (bytes) *)
 val fpPrevLev = 8           (* offset (bytes) *)
 val argsInicial = 0         (* words *)
@@ -42,10 +42,10 @@ val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
 val localsGap = ~4          (* bytes *)
 val calldefs = [rv]
-val specialregs = [rv, fp, sp]
-val argregs = []
-val callersaves = []
-val calleesaves = []
+val specialregs = [rv, fp, sp, zero]
+val argregs = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+val callersaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
+val calleesaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
 
 val accessListInicial = [InFrame fpPrevLev]
 
@@ -115,5 +115,19 @@ fun exp(InFrame k) e = MEM(BINOP(PLUS, TEMP(fp), CONST k))
 
 fun externalCall(s, l) = CALL(NAME s, l)
 
-fun procEntryExit1 (frame,body) = body
+fun procEntryExit1 (frame,body) = body (* mete los move *)
+
+fun procEntryExit2 (frame,body) = body @
+	[tigerassem.OPER {
+		assem="",
+		src=specialregs@calleesaves,
+		dst=[],
+		jump=SOME [] }]
+
+fun procEntryExit3 (frame: frame, body) = {
+	prolog = "PROCEDURE " ^ #name frame ^ "\n",
+	body = body,
+	epilog = "END " ^ #name frame ^ "\n"
+}
+
 end
