@@ -68,28 +68,17 @@ fun main(args) =
         fun procesarBody (bs,frame) = 
         let
             val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
-            (* TODO llamar a procEntryExit2 para que meta un truco para evitar que alloc use registros especiales a la salida de la func *)
-            val code_with_regs = tigerregalloc.alloc frame body_code
-            (* TODO llamar a procEntryExit3 para armar prologo y epilogo *)
+            val body_code_2 = procEntryExit2(frame,body_code)
+            val code_with_regs = tigerregalloc.alloc frame body_code_2
+            val body_code_3 = procEntryExit3(frame,code_with_regs)
         in 
-            code_with_regs
+            body_code_3
         end
 
 
         (* instrs : instr list list *)
         val instrs = List.map procesarBody canonProcs
-        val _ = showCodegen instrs
-
-(******* TODO Esto lo va a hacer alloc internamente *********)
-        (* flow_graphs : (flowgraph * tigergraph.node list) list *)
-        val flow_graphs = List.map tigerflow.instrs2graph instrs
-        
-        (* interf_graphs : ((igraph * (tigergraph.node -> tigertemp.temp list)) * tigergraph.node list) list *)
-        val interf_graphs = 
-            List.map
-            (fn (flow_graph, node_list) => (interferenceGraph flow_graph, node_list))
-            flow_graphs
-(******* TODO Esto lo va a hacer alloc internamente *********)
+        val _ = showCodegen (List.map (#body) instrs)
 
     in
         print "Success\n"
