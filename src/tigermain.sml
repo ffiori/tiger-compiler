@@ -46,7 +46,7 @@ fun main(args) =
         fun canonizeStrings (STRING x) = SOME x
           | canonizeStrings _ = NONE (* ignores PROC x *)
         
-        (* canonProcs : frag -> (stm list, frame) *)
+        (* canonProcs : (stm list, frame) list *)
         val canonProcs = List.mapPartial canonizeProcs fragmentos   (* List.mapPartial doesn't save NONE results, and unpacks SOME x into x. Like List.map o List.filter *)
         val canonStrings = List.mapPartial canonizeStrings fragmentos
         
@@ -64,21 +64,22 @@ fun main(args) =
             )
             x
 
-        (* procesarBody : body list * frame -> instr list *)
-        fun procesarBody (bs,frame) = 
-        let
-            val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
-            val body_code_2 = procEntryExit2(frame,body_code)
-            val code_with_regs = tigerregalloc.alloc frame body_code_2
-            val body_code_3 = procEntryExit3(frame,code_with_regs)
-        in 
-            body_code_3
-        end
+        (* procesarBody : stm list * frame -> instr list *)
+        fun procesarBody (bs,frame) =  (* bs son los statements que componen el body de la función con ese frame *)
+            let
+                val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
+                val body_code_2 = procEntryExit2(frame,body_code)
+                val (code_with_regs, temp2reg) = tigerregalloc.alloc frame body_code_2 (* TODO temp2reg should be a function or a table to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val body_code_3 = procEntryExit3(frame,code_with_regs)
+            in 
+                (body_code_3, temp2reg)
+            end
 
-
-        (* instrs : instr list list *)
-        val instrs = List.map procesarBody canonProcs
-        val _ = showCodegen (List.map (#body) instrs)
+        (* functions_code : ({prolog,body,epilog}, allocation) list *)
+        val functions_code = List.map procesarBody canonProcs
+        val _ = showCodegen (List.map (#body o #1) functions_code)
+        
+        (* TODO: define format function to convert instrs to a string of assembly code *)
 
     in
         print "Success\n"
