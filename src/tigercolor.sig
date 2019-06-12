@@ -3,7 +3,7 @@ sig
     type allocation = (tigertemp.temp, tigerframe.register) tigertab.Tabla
     
     val color :
-        {inteference_graph: tigerliveness.igraph,
+        {interference_graph: tigerliveness.igraph,
         initial: allocation,
         spillCost: tigergraph.node -> int,
         registers: tigerframe.register list}

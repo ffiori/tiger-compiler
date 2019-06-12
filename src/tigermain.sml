@@ -45,29 +45,42 @@ fun main(args) =
           | canonizeProcs _ = NONE (* ignores STRING x *)
         fun canonizeStrings (STRING x) = SOME x
           | canonizeStrings _ = NONE (* ignores PROC x *)
-          
+        
+        (* canonProcs : frag -> (stm list, frame) *)
         val canonProcs = List.mapPartial canonizeProcs fragmentos   (* List.mapPartial doesn't save NONE results, and unpacks SOME x into x. Like List.map o List.filter *)
         val canonStrings = List.mapPartial canonizeStrings fragmentos
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
-        fun showCodegen x = List.app (fn y =>
-            List.app (fn tigerassem.OPER w => print (#assem w)
-                        | tigerassem.LABEL w => print (#assem w)
-                        | _ => raise Fail "[showCodegen] unimplemented"
-            ) y) x
+        fun showCodegen x = 
+            List.app
+            (fn y =>
+                List.app
+                (fn tigerassem.OPER w => print (#assem w)
+                    | tigerassem.LABEL w => print (#assem w)
+                    | _ => raise Fail "[showCodegen] unimplemented"
+                )
+                y
+            )
+            x
 
         (* procesarBody : body list * frame -> instr list *)
-        fun procesarBody (bs,frame) = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
+        fun procesarBody (bs,frame) = 
+        let
+            val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
+            (* TODO llamar a procEntryExit2 para que meta un truco para evitar que alloc use registros especiales a la salida de la func *)
+            val code_with_regs = tigerregalloc.alloc frame body_code
+            (* TODO llamar a procEntryExit3 para armar prologo y epilogo *)
+        in 
+            code_with_regs
+        end
 
-(*  Se debería llamar en procesarBody a liveness y coloreo, adentro de codegen.
-    alloc : instr list * frame -> instr list * allocation
-    en vez de hacer todo en el main. Tipo alloc debería hacer los grafos y escupir el código
-    que se va a usar posta, con los registros ya usados. *)
 
         (* instrs : instr list list *)
         val instrs = List.map procesarBody canonProcs
         val _ = showCodegen instrs
+
+(******* TODO Esto lo va a hacer alloc internamente *********)
         (* flow_graphs : (flowgraph * tigergraph.node list) list *)
         val flow_graphs = List.map tigerflow.instrs2graph instrs
         
@@ -76,6 +89,8 @@ fun main(args) =
             List.map
             (fn (flow_graph, node_list) => (interferenceGraph flow_graph, node_list))
             flow_graphs
+(******* TODO Esto lo va a hacer alloc internamente *********)
+
     in
         print "Success\n"
     end handle Fail s => print("Fail: "^s)
