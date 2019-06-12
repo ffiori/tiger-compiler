@@ -51,6 +51,12 @@ fun main(args) =
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
+        fun showCodegen x = List.app (fn y =>
+            List.app (fn tigerassem.OPER w => print (#assem w)
+                        | tigerassem.LABEL w => print (#assem w)
+                        | _ => raise Fail "[showCodegen] unimplemented"
+            ) y) x
+
         (* procesarBody : body list * frame -> instr list *)
         fun procesarBody (bs,frame) = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
 
@@ -61,7 +67,7 @@ fun main(args) =
 
         (* instrs : instr list list *)
         val instrs = List.map procesarBody canonProcs
-        
+        val _ = showCodegen instrs
         (* flow_graphs : (flowgraph * tigergraph.node list) list *)
         val flow_graphs = List.map tigerflow.instrs2graph instrs
         

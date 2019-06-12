@@ -14,8 +14,31 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                             (gen t; t) 
                           end 
 
+        fun get_relop_assem i = case i of
+            EQ => "BEQ `s0, `s1"
+          | NE => "BNE `s0, `s1"
+          | LT => "BLT `s0, `s1"
+          | GT => "BLT `s1, `s0"
+          | LE => "BGE `s1, `s0"
+          | GE => "BGE `s0, `s1"
+          | ULT => "BLTU `s0, `s1"
+          | ULE => "BGEU `s1, `s0"
+          | UGT => "BLTU `s1, `s0"
+          | UGE => "BGEU `s0, `s1"
+
+        (* safeMunchStm : tigertree.stm -> unit
+           slow but safe implementations *) 
+        fun safeMunchStm s =
+          case s of
+            tigertree.MOVE(tigertree.MEM(e1),e2) =>
+                emit(OPER{assem = "SD `s0, 0(`s1)\n", 
+                          src = [munchExp e2,munchExp e1], 
+                          dst = [], 
+                          jump = NONE})
+            | _ => raise Fail ("[safeMunchStm] unknown thing")
+
         (* munchStm : tigertree.stm -> unit *)            
-        fun munchStm s = (*TODO*)
+        and munchStm s = (*TODO*)
             case s of 
                SEQ (a,b) => (munchStm a; munchStm b) (*204*)
               |tigertree.LABEL l  => emit(LABEL{ assem=l^":\n", lab=l })
@@ -36,33 +59,40 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                               src = [], 
                               dst = [munchExp e2], 
                               jump = NONE}) *)
-                   _         =>  (* M[e1] <- e2 . No distinguimos M[e1] <- M[e2] porque nuestra arquitectura no tiene MOVE*)
-                    emit(OPER{assem = "SW `s0, 0(`s1)", 
-                              src = [munchExp e2,munchExp e1], 
-                              dst = [], 
-                              jump = NONE})
+                   _         =>  safeMunchStm s 
+
               )
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
                     if (t1=tigerframe.sp orelse t1=tigerframe.fp)
                     then
-                        emit(OPER{assem = "ADD "^t1^", `x0, `s0", 
+                        emit(OPER{assem = "ADD "^t1^", `x0, `s0\n", 
                         src = [munchExp e2], 
                         dst = [], 
                         jump = NONE}) 
                     else
-                        emit(OPER{assem = "ADD `d0, `x0, `s0", 
+                        emit(OPER{assem = "ADD `d0, `x0, `s0\n", 
                         src = [munchExp e2], 
                         dst = [t1], 
                         jump = NONE}) 
 
-              | EXP (CALL (e,args)) => emit (OPER{ assem = "CALL 's0\n", (* page 204. CHECK. *)
-                                                 src = munchExp(e)::munchArgs(0,args),
+              | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "JAL "^n^"\n", (* page 204. CHECK. *)
+                                                 src = munchArgs(0,args),
                                                  dst = calldefs,
                                                  jump = NONE})
 
-              | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL\n") (* because of canonization *)
-              | _ => raise Fail "[munchStm] TODO Emilio \n"
-              (*TODO: JUMP, CJUMP*)
+              | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
+              | JUMP (NAME n, l) => emit (OPER{ assem = "J "^n^"\n",
+                                                 src = [],
+                                                 dst = [],
+                                                 jump = SOME l})
+              | CJUMP(oper,e1,e2,t,f) => ( emit (OPER{ assem = (get_relop_assem oper)^", "^t^"\n",
+                                                 src = [munchExp e1, munchExp e2],
+                                                 dst = [],
+                                                 jump = SOME [t,f]})) (* por canon este cjump tiene a continuacion el label f *)
+              | _ => emit(OPER{assem = "MISSING\n", 
+                        src = [], 
+                        dst = [], 
+                        jump = NONE})
 
       (* munchEXP and muncStm will produce tigerassem.Assem instructions as side effects *)
       (* munchExp : tigertree.exp -> tigertree.temp; returns the temporary in which the result is held *)
@@ -112,28 +142,28 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                             jump=NONE}))
           
           (*Para acceder a memoria tenemos que usar "LW rd,rs1,imm"  <=> rd <- mem[rs1 + imm]*)
-          | (MEM (CONST i)) =>
-            result (fn r => emit(OPER{assem="LW `d0, `x0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
+          (* | (MEM (CONST i)) =>
+            result (fn r => emit(OPER{assem="LD `d0, `x0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
                                             dst=[r], 
                                             src=[], 
                                             jump=NONE}))
           | (MEM (BINOP (PLUS, e1,CONST i))) =>
-            result (fn r => emit(OPER{assem="LW `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
+            result (fn r => emit(OPER{assem="LD `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
                                             dst=[r], 
                                             src=[munchExp e1], 
                                             jump=NONE}))
           | (MEM (BINOP (PLUS, CONST i, e2))) =>
-            result (fn r => emit(OPER{assem="LW `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
+            result (fn r => emit(OPER{assem="LD `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
                                             dst=[r], 
                                             src=[munchExp e2], 
-                                            jump=NONE}))
+                                            jump=NONE})) *) (* revisar imm grandes en const *)
           | (MEM e) =>
-            result (fn r => emit(OPER{assem="LW `d0, `s0, x0", (*x0: hardwired to 0*)
+            result (fn r => emit(OPER{assem="LD `d0, 0(`s0)\n",
                                             dst=[r], 
                                             src=[munchExp e], 
                                             jump=NONE}))
 
-          | (NAME _) => tigertemp.newtemp() (* TO DO *)
+          | (NAME _) => raise Fail ("[munchExp] There should not be NAME nodes outside of CALL (canonized tree)") 
           | (CALL _) =>  raise Fail ("[munchExp] There should not be CALL nodes outside EXP (canonized tree)") 
           | (ESEQ _ ) =>  raise Fail ("[munchExp] There should not be ESEQ nodes anymore (canonized tree)") 
           | _         =>  raise Fail ("[munchExp] Unknown expression")
@@ -155,7 +185,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
            know that something happens to them here
            *)
 
-        and munchArgs(_,_) = [] (* TO DO *)
+        and munchArgs(_,args) = List.map munchExp args (* TO DO *)
             
     in
         munchStm stm ; rev(!ilist)
