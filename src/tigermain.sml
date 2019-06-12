@@ -51,25 +51,24 @@ fun main(args) =
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
-        fun procesarBody (bs,frame) = map (fn b => tigercodegen.codegen frame b) bs
+        (* procesarBody : body list * frame -> instr list *)
+        fun procesarBody (bs,frame) = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
 
-(* Creo que se debería llamar por acá (en procesarBody) a alloc : instr list * frame -> instr list * allocation
-* en vez de hacer todo en el main. Tipo alloc debería hacer los grafos y escupir el código
-* que se va a usar posta, con los registros ya usados. *)
+(*  Se debería llamar en procesarBody a liveness y coloreo, adentro de codegen.
+    alloc : instr list * frame -> instr list * allocation
+    en vez de hacer todo en el main. Tipo alloc debería hacer los grafos y escupir el código
+    que se va a usar posta, con los registros ya usados. *)
 
-        (* instr : instr list list list *)
-        val instr = List.map procesarBody canonProcs
+        (* instrs : instr list list *)
+        val instrs = List.map procesarBody canonProcs
         
-        (* flow_graphs : (flowgraph * tigergraph.node list) list list *)
-        val flow_graphs = List.map (fn iis => List.map tigerflow.instrs2graph iis) instr
+        (* flow_graphs : (flowgraph * tigergraph.node list) list *)
+        val flow_graphs = List.map tigerflow.instrs2graph instrs
         
-        (* interf_graphs : ((igraph * (tigergraph.node -> tigertemp.temp list)) * tigergraph.node list) list list *)
+        (* interf_graphs : ((igraph * (tigergraph.node -> tigertemp.temp list)) * tigergraph.node list) list *)
         val interf_graphs = 
             List.map
-            (fn lfs => 
-                List.map
-                (fn (flow_graph, node_list) => (interferenceGraph flow_graph, node_list))
-                lfs)
+            (fn (flow_graph, node_list) => (interferenceGraph flow_graph, node_list))
             flow_graphs
     in
         print "Success\n"
