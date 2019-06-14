@@ -20,6 +20,25 @@ val degree : ((tigertemp.temp, int ref) dict) ref = ref (mkDict(String.compare))
 (****** End Graph *******)
 
 val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO where does this get filled? *)
+val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO idem precolored *)
+
+val simplifyWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+val freezeWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+val spillWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+
+val spilledNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+val coalescedNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+val coloredNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+
+(*
+val selectStack :
+*)
+
+val worklistMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
+
+val moveList : ((tigertemp.temp, (tigerassem.instr set) ref) dict) ref =
+    ref (mkDict(String.compare))
+
 
 fun addEdge (u,v) adjSet adjList =
     if u<>v andalso not (member(!adjSet,(u,v)))
@@ -40,6 +59,13 @@ fun addEdge (u,v) adjSet adjList =
         in (f u v; f v u) end
     else ()
 
+fun makeWorkList() =
+    Splayset.app
+    (fn temp => ()) (*TODO*)
+    (!initial);
+    val _ = initial := empty(String.compare)
+    
+
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
         val (flow_graph, node_list) = tigerflow.instrs2graph body
@@ -47,9 +73,20 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
             tigerliveness.interferenceGraph flow_graph
         
         (* Declare and initialize stuff TODO *)
-        val worklistMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
-        val moveList : ((tigertemp.temp, (tigerassem.instr set) ref) dict) ref =
-            ref (mkDict(String.compare))
+        val _ = simplifyWorklist := empty(String.compare)
+        val _ = freezeWorklist := empty(String.compare)
+        val _ = spillWorklist := empty(String.compare)
+        
+        val _ = spilledNodes := empty(String.compare)
+        val _ = coalescedNodes := empty(String.compare)
+        val _ = coloredNodes := empty(String.compare)
+
+(*
+        val _ = selectStack := empty(String.compare)
+*)
+        
+        val _ = worklistMoves :=  empty(tigerassem.compare)
+        val _ = moveList := mkDict(String.compare)
         
         val _ = adjSet := empty(stringPairCompare)
         val _ = adjList := mkDict(String.compare)
