@@ -13,7 +13,6 @@ struct
     type graph = noderep array
     type node = graph * node'
 
-
     val emptyNode = NODE{succ=[],pred=[]}
 
     val bogusNode = NODE{succ=[~1],pred=[]}
@@ -22,6 +21,7 @@ struct
     | isBogus _ = false
 
     fun eq((_,a),(_,b)) = a=b
+    fun compare((_,a),(_,b)) = Int.compare(a,b)
 
     fun augment (g: graph) (n: node') : node = (g,n)
 

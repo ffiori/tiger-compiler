@@ -8,6 +8,7 @@ sig
     val pred: node -> node list
     val adj: node -> node list (* adj(n) = succ(n) U pred(n) *)
     val eq: node*node -> bool
+    val compare: node*node -> order
     
     val newGraph: unit -> graph  (* Creates an emtpy, directed graph*)
     val newNode : graph -> node  
