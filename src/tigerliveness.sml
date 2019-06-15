@@ -11,8 +11,8 @@ struct
     type liveSet = (tigertemp.temp, unit) tigertab.Tabla
     type liveMap = (tigergraph.node, liveSet) tigertab.Tabla 
     
-    val livein : liveMap = tigertab.tabNuevaEq(tigergraph.eq)
-    val liveout : liveMap = tigertab.tabNuevaEq(tigergraph.eq)
+    val livein : liveMap ref = ref (tigertab.tabNuevaEq(tigergraph.eq))
+    val liveout : liveMap ref = ref (tigertab.tabNuevaEq(tigergraph.eq))
     
     fun computeLiveness (tigerflow.FGRAPH flow_graph) =
     (* Recorrer todos los nodos n y llenar livein[n] y liveout[n]. Page 214. *)
@@ -37,19 +37,19 @@ struct
                         (fn (temp,live_set) => tabInserta(temp, (), live_set))
                         (tabNueva())
                         use
-                    val old_liveout_node = tabSaca(current_node, liveout)
+                    val old_liveout_node = tabSaca(current_node, !liveout)
                     val def_table = tabInserList(tabNueva(), List.map (fn x=>(x,())) def)
                     val livein_node = use_node U (old_liveout_node -- def_table)
 
                     (* liveout_node = U (in[s]) forall s in succ[n] *)
                     val liveout_node : liveSet = 
                         List.foldl
-                        (fn (n,t) => t U (tabSaca(n, livein)))
+                        (fn (n,t) => t U (tabSaca(n, !livein)))
                         (tabNueva())
                         (succ(current_node)) (* succ : node -> node list *)
 
-                    val _ = tabInserta(current_node, livein_node, livein)
-                    val _ = tabInserta(current_node, liveout_node, liveout)
+                    val _ = livein := tabInserta(current_node, livein_node, !livein)
+                    val _ = liveout := tabInserta(current_node, liveout_node, !liveout)
                 in
                     ()
                 end
@@ -64,19 +64,19 @@ struct
             
             fun compareSets(s1,s2) = tabEquals(s1,s2,(fn (x,y)=>x=y))
         in
-            if tabEquals(livein', livein, compareSets) andalso tabEquals(liveout', liveout, compareSets)
+            if tabEquals(!livein', !livein, compareSets) andalso tabEquals(!liveout', !liveout, compareSets)
             then ()
             else computeLiveness (tigerflow.FGRAPH flow_graph)
         end
     
     fun interferenceGraph flow_graph = 
         let
-            val _ = computeLiveness flow_graph (* esto modifica el flow_graph o hay que meter por referencia y esas cosas? check por las dudas *)
+            val _ = computeLiveness flow_graph
 
             fun getTempList node =
                 List.map
                 (fn (x,y) => x)
-                (tabAList(tabSaca(node,liveout)))
+                (tabAList(tabSaca(node,!liveout)))
         in
             (flow_graph, getTempList)
         end
