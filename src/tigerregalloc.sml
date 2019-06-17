@@ -1,12 +1,12 @@
 structure tigerregalloc :> tigerregalloc =
 struct
 
-open Splayset (* may be better Hashset? We don't need order, do we? *)
+open Splayset
 open Splaymap
 
 type allocation = (tigertemp.temp, tigerframe.register) tigertab.Tabla
 
-(******** Graph *********)
+(**************** Graph *****************)
 fun stringPairCompare ((s1,s2),(t1,t2)) =
     if s1=t1 then String.compare(s2,t2) else String.compare(s1,t1)
 
@@ -17,7 +17,7 @@ val adjList : ((tigertemp.temp, (tigertemp.temp set) ref) dict) ref =
     ref (mkDict(String.compare))
 
 val degree : ((tigertemp.temp, int ref) dict) ref = ref (mkDict(String.compare))
-(****** End Graph *******)
+(************** End Graph ***************)
 
 val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO where does this get filled? *)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO idem precolored *)
@@ -30,17 +30,18 @@ val spilledNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val coalescedNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val coloredNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 
-(*
-val selectStack :
-*)
+val selectStack : tigertemp.temp list ref = ref [] (* Temporaries removed from the graph. *)
 
+val coalescedMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
+val constrainedMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
+val frozenMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
 val worklistMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
+val activeMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
 
 val moveList : ((tigertemp.temp, (tigerassem.instr set) ref) dict) ref =
     ref (mkDict(String.compare))
 
-
-fun addEdge (u,v) adjSet adjList =
+fun addEdge (u,v) =
     if u<>v andalso not (member(!adjSet,(u,v)))
     then
         let
@@ -59,12 +60,69 @@ fun addEdge (u,v) adjSet adjList =
         in (f u v; f v u) end
     else ()
 
-fun makeWorkList() =
+fun adjacent n = 
+    difference(!(find(!adjList,n)), addList(!coalescedNodes, !selectStack))
+
+fun nodeMoves n =
+    intersection(!(find(!moveList,n)), union(!activeMoves, !worklistMoves))
+
+fun moveRelated n = Splayset.numItems(nodeMoves(n)) <> 0
+
+fun makeWorklist() =
     Splayset.app
-    (fn temp => ()) (*TODO*)
+    (fn n => 
+        if !(find(!degree,n)) >= tigerframe.usable_registers
+        then spillWorklist := add(!spillWorklist,n)
+        else
+            if moveRelated(n)
+            then freezeWorklist := add(!freezeWorklist,n)
+            else simplifyWorklist := add(!simplifyWorklist,n)
+    )
     (!initial);
     val _ = initial := empty(String.compare)
+
+fun first_element set = hd(Splayset.listItems(set))
+
+fun push(n,list) = (n::list)
+fun pop (x::xs) = x
+  | pop [] = raise Fail "[pop] Stack vacío!\n"
+
+fun enableMoves nodes =
+    let fun processMove m =
+            if member(!activeMoves,m)
+            then 
+                let val _ = activeMoves := delete(!activeMoves, m)
+                    val _ = worklistMoves := add(!worklistMoves, m)
+                in () end
+            else ()
+    in  
+        Splayset.app
+        (fn n => Splayset.app processMove (nodeMoves(n)))
+        nodes
+    end
     
+fun decrementDegree node =
+    let val deg = find(!degree,node)
+        val _ = deg := !deg-1
+        val _ = 
+            if !deg = tigerframe.usable_registers
+            then
+                let val _ = enableMoves(Splayset.add(adjacent(node), node))
+                    val _ = spillWorklist := delete(!spillWorklist, node)
+                in 
+                    if moveRelated(node)
+                    then freezeWorklist := Splayset.add(!freezeWorklist,node)
+                    else simplifyWorklist := Splayset.add(!simplifyWorklist,node)
+                end
+            else ()
+    in () end
+
+fun simplify() =
+    let val n = first_element(!simplifyWorklist)
+        val _ = simplifyWorklist := delete(!simplifyWorklist, n)
+        val _ = push(n, !selectStack)
+        val _ = Splayset.app decrementDegree (adjacent(n))
+    in () end
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
@@ -81,11 +139,14 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         val _ = coalescedNodes := empty(String.compare)
         val _ = coloredNodes := empty(String.compare)
 
-(*
-        val _ = selectStack := empty(String.compare)
-*)
+        val _ = selectStack := []
         
-        val _ = worklistMoves :=  empty(tigerassem.compare)
+        val _ = coalescedMoves := empty(tigerassem.compare)
+        val _ = constrainedMoves := empty(tigerassem.compare)
+        val _ = frozenMoves := empty(tigerassem.compare)
+        val _ = worklistMoves := empty(tigerassem.compare)
+        val _ = activeMoves := empty(tigerassem.compare)
+        
         val _ = moveList := mkDict(String.compare)
         
         val _ = adjSet := empty(stringPairCompare)
@@ -115,21 +176,51 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
                             val _ = Splayset.app
                                     (fn temp => 
                                         let val moves_set = Splaymap.find(!moveList, temp) 
-                                        in (moves_set := Splayset.add(!moves_set, instr); ()) end)
+                                        in moves_set := Splayset.add(!moves_set, instr) end)
                                     (union(!def_set, !use_set))
-                            val _ = worklistMoves := add(!worklistMoves,instr)
-                        in () end
+                        in worklistMoves := add(!worklistMoves,instr) end
                     else ()
                 
                 val _ = live := union(!live,!def_set)
                 val _ = Splayset.app
-                        (fn d => Splayset.app (fn l => addEdge(l,d) adjSet adjList) (!live))
+                        (fn d => Splayset.app (fn l => addEdge(l,d)) (!live))
                         (!def_set)
                 val _ = live := union(!use_set, difference(!live,!def_set))
             in () end
         
         val _ = List.app processInstruction ((List.rev o ListPair.zip) (body, node_list))
         (************************ build() end *************************)
+        
+        val _ = makeWorklist()
+        
+        fun loop() =
+            let
+                val _ =
+                    if Splayset.numItems(!simplifyWorklist) <> 0
+                    then simplify()
+                    else if Splayset.numItems(!worklistMoves) <> 0
+                    then () (*TODO*)
+                    else if Splayset.numItems(!freezeWorklist) <> 0
+                    then () (*TODO*)
+                    else if Splayset.numItems(!spillWorklist) <> 0
+                    then () (*TODO*)
+                    else ()
+            in
+                if  Splayset.numItems(!simplifyWorklist) = 0 andalso
+                    Splayset.numItems(!worklistMoves) = 0 andalso
+                    Splayset.numItems(!freezeWorklist) = 0 andalso
+                    Splayset.numItems(!spillWorklist) = 0
+                then ()
+                else loop()
+            end
+        
+(*
+        val _ = assignColors()
+        val _ =
+            if Splayset.numItems(!spilledNodes) <> 0
+            then rewriteProgram(!spilledNodes); alloc frm body
+            else ()
+*)
     in
         (body, tigertab.tabNueva()) (* TODO *)
     end

@@ -46,6 +46,7 @@ val specialregs = [rv, fp, sp, zero]
 val argregs = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 val callersaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
 val calleesaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
+val usable_registers = 27 (* Todos (32) menos fp, sp, zero, gp, tp. *)
 
 val accessListInicial = [InFrame fpPrevLev]
 

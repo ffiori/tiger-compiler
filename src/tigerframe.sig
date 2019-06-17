@@ -29,5 +29,5 @@ val procEntryExit2 : frame * tigerassem.instr list -> tigerassem.instr list
 val procEntryExit3 : frame * tigerassem.instr list -> {prolog: string, body: tigerassem.instr list, epilog: string}
 datatype frag = PROC of {body: tigertree.stm, frame: frame}
 	| STRING of tigertemp.label * string
-
+val usable_registers : int (* Cantidad de registros que se pueden usar para hacer el coloreo *)
 end
