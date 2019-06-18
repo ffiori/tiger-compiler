@@ -115,12 +115,12 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       dst=[r], 
                                       src=[], 
                                       jump=NONE}))
-          | (BINOP (b, TEMP sp, CONST i)) =>
+          | (BINOP (b, TEMP "sp", CONST i)) =>
             result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^sp^", "^Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[], 
                                             jump=NONE}))
-          | (BINOP (b, TEMP fp, CONST i)) =>
+          | (BINOP (b, TEMP "fp", CONST i)) =>
             result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^fp^", "^Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[], 
@@ -166,7 +166,6 @@ fun codegen frame stm = (*se aplica a cada funcion*)
           | (NAME _) => raise Fail ("[munchExp] There should not be NAME nodes outside of CALL (canonized tree)") 
           | (CALL _) =>  raise Fail ("[munchExp] There should not be CALL nodes outside EXP (canonized tree)") 
           | (ESEQ _ ) =>  raise Fail ("[munchExp] There should not be ESEQ nodes anymore (canonized tree)") 
-          | _         =>  raise Fail ("[munchExp] Unknown expression")
         end
             
           

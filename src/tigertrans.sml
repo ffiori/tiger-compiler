@@ -373,8 +373,8 @@ fun binOpIntRelExp {left,oper,right} =
                        |NeqOp => NE
                        |LtOp => LT
                        |GtOp => GT
-                       |LteOp => LE
-                       |GteOp => GE
+                       |LeOp => LE
+                       |GeOp => GE
                        |_ => raise Fail "Operador raro rel..."
     in
         Ex(ESEQ(seq[MOVE(TEMP rta,CONST 0),
@@ -395,8 +395,8 @@ fun binOpStrExp {left,oper,right} =
                        |NeqOp => NE
                        |LtOp => LT
                        |GtOp => GT
-                       |LteOp => LE
-                       |GteOp => GE
+                       |LeOp => LE
+                       |GeOp => GE
                        |_ => raise Fail "Operador raro strrel..."
     in
         Ex (ESEQ(seq [MOVE(TEMP tl,l),
