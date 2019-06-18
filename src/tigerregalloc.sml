@@ -1,8 +1,8 @@
 structure tigerregalloc :> tigerregalloc =
 struct
 
-open Splayset
 open Splaymap
+open Splayset
 
 type allocation = (tigertemp.temp, tigerframe.register) tigertab.Tabla
 
@@ -13,7 +13,7 @@ fun stringPairCompare ((s1,s2),(t1,t2)) =
 val adjSet : ((tigertemp.temp * tigertemp.temp) Splayset.set) ref = 
     ref (empty(stringPairCompare))
 
-val adjList : ((tigertemp.temp, (tigertemp.temp set) ref) dict) ref =
+val adjList : ((tigertemp.temp, (tigertemp.temp set) ref) Splaymap.dict) ref =
     ref (mkDict(String.compare))
 
 val degree : ((tigertemp.temp, int ref) dict) ref = ref (mkDict(String.compare))
@@ -51,9 +51,9 @@ fun addEdge (u,v) =
                 if not (member(!precolored,x))
                 then 
                     let
-                        val adj_list = find(!adjList, x)
+                        val adj_list = Splaymap.find(!adjList, x)
                         val _ = adj_list := add(!adj_list, y)
-                        val degree_node = find(!degree, x)
+                        val degree_node = Splaymap.find(!degree, x)
                         val _ = degree_node := !degree_node + 1
                     in () end
                 else ()
@@ -61,17 +61,17 @@ fun addEdge (u,v) =
     else ()
 
 fun adjacent n = 
-    difference(!(find(!adjList,n)), addList(!coalescedNodes, !selectStack))
+    difference(!(Splaymap.find(!adjList,n)), addList(!coalescedNodes, !selectStack))
 
 fun nodeMoves n =
-    intersection(!(find(!moveList,n)), union(!activeMoves, !worklistMoves))
+    intersection(!(Splaymap.find(!moveList,n)), union(!activeMoves, !worklistMoves))
 
 fun moveRelated n = Splayset.numItems(nodeMoves(n)) <> 0
 
 fun makeWorklist() =
     Splayset.app
     (fn n => 
-        if !(find(!degree,n)) >= tigerframe.usable_registers
+        if !(Splaymap.find(!degree,n)) >= tigerframe.usable_registers
         then spillWorklist := add(!spillWorklist,n)
         else
             if moveRelated(n)
@@ -102,7 +102,7 @@ fun enableMoves nodes =
     end
     
 fun decrementDegree node =
-    let val deg = find(!degree,node)
+    let val deg = Splaymap.find(!degree,node)
         val _ = deg := !deg-1
         val _ = 
             if !deg = tigerframe.usable_registers - 1
@@ -169,7 +169,7 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
                 val _ = use_set := addList(!use_set, tigertab.tabSaca(node,use))
                 
                 val _ = 
-                    if tigertab.tabSaca(node,ismove)
+                    if tigertab.tabEsta(node,ismove) andalso tigertab.tabSaca(node,ismove) (* para que no explote, se puede emprolijar *)
                     then
                         let
                             val _ = live := difference(!live, !use_set)

@@ -54,8 +54,8 @@ struct
                     ()
                 end
             
-            val livein' = livein
-            val liveout' = liveout
+            val livein' = !livein
+            val liveout' = !liveout
             
             val _ =
                 List.app
@@ -64,7 +64,7 @@ struct
             
             fun compareSets(s1,s2) = tabEquals(s1,s2,(fn (x,y)=>x=y))
         in
-            if tabEquals(!livein', !livein, compareSets) andalso tabEquals(!liveout', !liveout, compareSets)
+            if tabEquals(livein', !livein, compareSets) andalso tabEquals(liveout', !liveout, compareSets)
             then ()
             else computeLiveness (tigerflow.FGRAPH flow_graph)
         end
@@ -74,9 +74,9 @@ struct
             val _ = computeLiveness flow_graph
 
             fun getTempList node =
-                List.map
-                (fn (x,y) => x)
-                (tabAList(tabSaca(node,!liveout)))
+                case tabBusca(node,!liveout) of
+                    SOME lst => List.map (#1) (tabAList lst)
+                    | _ => raise Fail "[getTempList] node not found! Maybe while using liveout (return value of interferenceGraph).\n"
         in
             (flow_graph, getTempList)
         end

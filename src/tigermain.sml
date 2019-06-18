@@ -72,7 +72,7 @@ fun main(args) =
         val functions_code = List.map procesarBody canonProcs
         val _ = showCodegen (List.map (#body o #1) functions_code)
         
-        (* TODO: define format function to convert instrs to a string of assembly code *)
+        (* TODO: use tigerassem.format function to convert instrs to a string of assembly code *)
 
     in
         print "Success\n"
