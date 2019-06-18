@@ -23,8 +23,8 @@ val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TOD
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO idem precolored *)
 
 val simplifyWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
-val freezeWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
-val spillWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
+val freezeWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* nodos de grado bajo, relacionados con moves. (candidatos a coalescer) *)
+val spillWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* nodos de grado alto *)
 
 val spilledNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val coalescedNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
@@ -33,13 +33,13 @@ val coloredNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val selectStack : tigertemp.temp list ref = ref [] (* Temporaries removed from the graph. *)
 
 val coalescedMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
-val constrainedMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
-val frozenMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
-val worklistMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
-val activeMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare))
+val constrainedMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare)) (* moves con src/dst que interfieren. *)
+val frozenMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare)) (* moves que no van a coalescer. *)
+val worklistMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare)) (* moves que pueden coalescer. *)
+val activeMoves : (tigerassem.instr set) ref = ref (empty(tigerassem.compare)) (* moves que no estan listos para coalescer. (en un principio todos los moves estan aca) *)
 
 val moveList : ((tigertemp.temp, (tigerassem.instr set) ref) dict) ref =
-    ref (mkDict(String.compare))
+    ref (mkDict(String.compare)) (* moves asociados a un nodo. moveList[u] da los moves que usan a u. *)
 
 fun addEdge (u,v) =
     if u<>v andalso not (member(!adjSet,(u,v)))
@@ -105,7 +105,7 @@ fun decrementDegree node =
     let val deg = find(!degree,node)
         val _ = deg := !deg-1
         val _ = 
-            if !deg = tigerframe.usable_registers
+            if !deg = tigerframe.usable_registers - 1
             then
                 let val _ = enableMoves(Splayset.add(adjacent(node), node))
                     val _ = spillWorklist := delete(!spillWorklist, node)
