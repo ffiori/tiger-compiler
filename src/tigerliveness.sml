@@ -37,14 +37,14 @@ struct
                         (fn (temp,live_set) => tabInserta(temp, (), live_set))
                         (tabNueva())
                         use
-                    val old_liveout_node = tabSaca(current_node, !liveout)
+                    val old_liveout_node = if tabEsta(current_node, !liveout) then tabSaca(current_node, !liveout) else tabNueva()
                     val def_table = tabInserList(tabNueva(), List.map (fn x=>(x,())) def)
                     val livein_node = use_node U (old_liveout_node -- def_table)
 
                     (* liveout_node = U (in[s]) forall s in succ[n] *)
                     val liveout_node : liveSet = 
                         List.foldl
-                        (fn (n,t) => t U (tabSaca(n, !livein)))
+                        (fn (n,t) => if tabEsta(n, !livein) then t U (tabSaca(n, !livein)) else t)
                         (tabNueva())
                         (succ(current_node)) (* succ : node -> node list *)
 
