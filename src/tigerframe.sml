@@ -29,7 +29,8 @@ datatype access = InFrame of int | InReg of tigertemp.label
 
 val fp = "FP"               (* frame pointer *)
 val sp = "SP"               (* stack pointer *)
-val rv = "RV"               (* return value  *)
+val rv = "A0"               (* return value  *)
+val ra = "RA"               (* return address *)
 val zero = "ZERO"
 val wSz = 8                 (* word size in bytes *)
 val log2WSz = 3             (* base two logarithm of word size in bytes *)
@@ -41,11 +42,10 @@ val argsGap = wSz           (* bytes *)
 val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
 val localsGap = ~4          (* bytes *)
-val calldefs = [rv]
-val specialregs = [rv, fp, sp, zero]
-val argregs = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
-val callersaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
-val calleesaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
+val specialregs = [ra, fp, sp, zero]
+val argregs = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7"]
+val callersaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
+val calleesaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
 val usable_registers = 27 (* Todos (32) menos fp, sp, zero, gp, tp. *)
 
 val accessListInicial = [InFrame fpPrevLev]

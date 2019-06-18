@@ -65,19 +65,19 @@ fun codegen frame stm = (*se aplica a cada funcion*)
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
                     if (t1=tigerframe.sp orelse t1=tigerframe.fp)
                     then
-                        emit(OPER{assem = "ADD "^t1^", `x0, `s0\n", 
+                        emit(OPER{assem = "ADD "^t1^", x0, `s0\n", 
                         src = [munchExp e2], 
                         dst = [], 
                         jump = NONE}) 
                     else
-                        emit(OPER{assem = "ADD `d0, `x0, `s0\n", 
+                        emit(OPER{assem = "ADD `d0, x0, `s0\n", 
                         src = [munchExp e2], 
                         dst = [t1], 
                         jump = NONE}) 
 
               | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "JAL "^n^"\n", (* page 204. CHECK. *)
-                                                 src = munchArgs(0,args),
-                                                 dst = calldefs,
+                                                 src = munchArgs(args),
+                                                 dst = [ra],
                                                  jump = NONE})
 
               | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
@@ -184,7 +184,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
            know that something happens to them here
            *)
 
-        and munchArgs(_,args) = List.map munchExp args (* TO DO *)
+        and munchArgs(args) = List.map munchExp args (* TO DO *)
             
     in
         munchStm stm ; rev(!ilist)

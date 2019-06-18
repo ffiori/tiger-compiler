@@ -54,14 +54,7 @@ fun main(args) =
 
         fun showCodegen x = 
             List.app
-            (fn y =>
-                List.app
-                (fn tigerassem.OPER w => print (#assem w)
-                    | tigerassem.LABEL w => print (#assem w)
-                    | _ => raise Fail "[showCodegen] unimplemented"
-                )
-                y
-            )
+            (fn y => List.app (fn w => print(tigerassem.format (fn f => f) w)) y)
             x
 
         (* procesarBody : stm list * frame -> instr list *)

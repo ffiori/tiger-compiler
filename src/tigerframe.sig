@@ -4,7 +4,9 @@ sig
 type frame
 type register = string
 val rv : tigertemp.temp
+val ra : tigertemp.temp
 val fp : tigertemp.temp
+val sp : tigertemp.temp
 datatype access = InFrame of int | InReg of tigertemp.label
 val fpPrev : int
 val fpPrevLev : int
@@ -14,11 +16,9 @@ val string : tigertemp.label * string -> string
 val formals : frame -> access list
 val allocArg : frame -> bool -> access
 val allocLocal : frame -> bool -> access
-val sp : tigertemp.temp
 val maxRegFrame : frame -> int
 val wSz : int
 val log2WSz : int
-val calldefs : tigertemp.temp list
 val callersaves : tigertemp.temp list
 val calleesaves : tigertemp.temp list
 val argregs : tigertemp.temp list
