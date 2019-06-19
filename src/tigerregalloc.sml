@@ -6,11 +6,15 @@ open Splayset
 
 type allocation = (tigertemp.temp, tigerframe.register) tigertab.Tabla
 
+(* Tries to delete element from set. Returns same set if element is not in set. *)
 fun safeDelete(set,element) = (delete(set,element) handle _ => set)
 (*
 fun safeDelete(set,element) = if member(set,element) then delete(set,element) else set
 *)
 
+(* Tries to find the value for given key in map. If key is not in map,
+ * it inserts it in the map and returns default_value. *)
+(* TODO does it make sense to insert it even if we don't return the map? doesn't it get lost? *)
 fun safeFind(map,key,default_value) = (Splaymap.find(map,key) handle _ => (Splaymap.insert(map,key,default_value);default_value))
 (*
 fun safeFind(map,key,default_value) =
@@ -57,6 +61,11 @@ val moveList : ((tigertemp.temp, tigerassem.instr set) dict) ref =
     ref (mkDict(String.compare)) (* moves asociados a un nodo. moveList[u] da los moves que usan a u. *)
 val moveList_default_value = empty(tigerassem.compare)
 
+val alias : ((tigertemp.temp, tigertemp.temp) dict) ref = ref (mkDict(String.compare))
+(*
+val color : ((tigertemp.temp, string) dict) ref = ref (empty(String.compare)) (* mapea temporales a registros posta *)
+*)
+
 fun addEdge (u,v) =
     if u<>v andalso not (member(!adjSet,(u,v)))
     then
@@ -76,6 +85,7 @@ fun addEdge (u,v) =
         in (f u v; f v u) end
     else ()
 
+(* adjacent : tigertemp.temp -> tigertemp.temp set *)
 fun adjacent n = 
     difference(safeFind(!adjList, n, adjList_default_value), addList(!coalescedNodes, !selectStack))
 
@@ -140,13 +150,83 @@ fun simplify() =
         val _ = Splayset.app decrementDegree (adjacent(n))
     in () end
 
+fun getAlias node =
+    if member(!coalescedNodes,node) 
+    then getAlias (Splaymap.find(!alias,node) handle _ => raise Fail "[getAlias] node not found in alias. Should not happen.\n")
+    else node
+
+fun addWorklist u =
+    if (not(member(!precolored,u))) andalso (not(moveRelated u)) andalso safeFind(!degree,u,0) < tigerframe.usable_registers
+    then (
+        freezeWorklist := safeDelete(!freezeWorklist,u);
+        simplifyWorklist := add(!simplifyWorklist,u)
+    )
+    else ()    
+
+fun OK(t,r) =
+    safeFind(!degree,t,degree_default_value) < tigerframe.usable_registers orelse
+    member(!precolored,t) orelse
+    member(!adjSet,(t,r))
+
+fun conservative node_set =
+    let val k = 
+        foldl
+        (fn (node,answer) => 
+            if safeFind(!degree,node,0) >= tigerframe.usable_registers
+            then answer+1
+            else answer)
+        0
+        node_set
+    in k < tigerframe.usable_registers end
+
+fun combine(u,v) = () (*TODO*)
+
+fun coalesce() =
+    let
+        val m = first_element (!worklistMoves)
+        val (x,y) = (* TODO cuál es x y cuál es y? src y dst, o al revés? *)
+            case m of
+                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
+                | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
+        val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
+        val _ = safeDelete(!worklistMoves,m)
+        
+        fun bigCondition() =
+            let
+                val left = 
+                    foldl
+                    (fn (node,answer) => OK(node,u) andalso answer)
+                    (member(!precolored,u))
+                    (adjacent v)
+                val right = not(member(!precolored,u)) andalso conservative(union(adjacent u, adjacent v))    
+            in 
+                left orelse right
+            end
+    in
+        if u=v
+        then ((coalescedMoves := add(!coalescedMoves,m)); addWorklist(u))
+        else if member(!precolored,u) orelse member(!adjSet,(u,v))
+        then (
+            constrainedMoves := add(!constrainedMoves,m);
+            addWorklist(u);
+            addWorklist(v)
+        )
+        else if bigCondition()
+        then (
+            coalescedMoves := add(!coalescedMoves,m);
+            combine(u,v);
+            addWorklist(u)
+        )
+        else (activeMoves := add(!activeMoves,m))
+    end
+
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
         val (flow_graph, node_list) = tigerflow.instrs2graph body
         val (interf_graph, liveout) : tigerliveness.igraph * (tigergraph.node -> tigertemp.temp list) =
             tigerliveness.interferenceGraph flow_graph
         
-        (* Declare and initialize stuff TODO *)
+        (* Declare and initialize stuff TODO por ahora estoy dejando todo vacío pero algunas cosas tienen que tener cosas *)
         val _ = simplifyWorklist := empty(String.compare)
         val _ = freezeWorklist := empty(String.compare)
         val _ = spillWorklist := empty(String.compare)
@@ -167,6 +247,11 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         
         val _ = adjSet := empty(stringPairCompare)
         val _ = adjList := mkDict(String.compare)
+        
+        val _ = alias := mkDict(String.compare)
+        (*
+        val color : ((tigertemp.temp, string) dict) ref = ref (empty(String.compare)) (* mapea temporales a registros posta *)
+        *)
         
         (**************** build() (as in the book) ********************)
         (* WARNING: no entiendo bien qué hace el libro acá, 
