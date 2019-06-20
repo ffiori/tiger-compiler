@@ -250,6 +250,8 @@ fun coalesce() =
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
+        val _ = print("ASSEM LIST: \n ")
+        val _ = List.app (fn w => print(tigerassem.format (fn f => f) w)) body
         val (flow_graph, fnode_list) = tigerflow.instrs2graph body
         val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
         val _ = print("FLOW GRAPH: \n ")

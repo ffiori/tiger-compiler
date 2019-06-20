@@ -31,7 +31,8 @@ struct
           fun create_nodes [] = []
            |  create_nodes ((LABEL l)::is) =   (* labels are not proper instructions, so no node is created *)
                 let                            (* However, we do save the node of the next instruction, as it
-                                                  is where control will go if the program jumps to LABEL l *)            
+                                                  is where control will go if the program jumps to LABEL l *) 
+                  val _ = print("LABEL... no creo nodo\n")           
                   val ns = create_nodes is
                   val p = case ns of
                                []                 => raise Fail "[instrs2graph] label suelta, no deberia pasar"
@@ -39,7 +40,7 @@ struct
                 in
                   p::ns
                 end
-           |  create_nodes (i::is) = (i,newNode(control))::(create_nodes is) (* For each non-Label instruction, a node is created *)
+           |  create_nodes (i::is) = (print("NO LABEL... creo nodo\n") ; ((i,newNode(control))::(create_nodes is))) (* For each non-Label instruction, a node is created *)
 
           val instr_node_pairs = create_nodes il
 
@@ -60,22 +61,25 @@ struct
                                           | SOME node => node
                                       ) js
 
-                val _ = List.app (fn node => mk_edge{from=n,to=node}) nodes (* WARNING: It could make it multiedged, do we support that? Sería en el caso en que más de un JUMP potencial de una instrucción va a la misma etiqueta *)
+                val _ = List.app (fn node => (print("[JUMP]Adding edge from "^tigergraph.nodename(n)^"->"^tigergraph.nodename(node)^"\n");
+                                                    mk_edge{from=n,to=node})) nodes (* WARNING: It could make it multiedged, do we support that? Sería en el caso en que más de un JUMP potencial de una instrucción va a la misma etiqueta *)
               in
                 create_edges(ns)
               end
             
             (* Nodes that cannot jump are connected with the node of the next instruction *)
-            | create_edges ((i1,n1)::(i2,n2)::is) = (mk_edge{from=n1,to=n2} ; create_edges((i2,n2)::is))
+            | create_edges ((i1,n1)::(i2,n2)::is) = (print("[CONS]Adding edge "^tigergraph.nodename(n1)^"->"^tigergraph.nodename(n2)^"\n"); mk_edge{from=n1,to=n2} ; create_edges((i2,n2)::is))
             | create_edges _ = () (* one or zero instructions left, no out edges *)
 
-          val _ = create_edges instr_node_pairs
-
-          (* 4 - The graph is ready. Get extra information required for the FGRAPH: *)
           fun is_label (LABEL _) = true
             | is_label _         = false
             
+
           val nodes_not_labels = List.filter (fn (x,n) => not(is_label x)) instr_node_pairs
+
+          val _ = create_edges nodes_not_labels
+
+          (* 4 - The graph is ready. Get extra information required for the FGRAPH: *)
 
           fun get_def (OPER {assem=_,dst=d,src=s,...},n)  = (n,d)
             | get_def (MOVE {assem=_,dst=d,src=s},n)      = (n,[d])

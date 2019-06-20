@@ -126,7 +126,7 @@ fun procEntryExit1 (frame,body) = let
 	val restoresCS = List.map (MOVE o (fn (t, r) => (r, t))) CStemps
 
 in
-	seqStm (savesCS @ [body] @ restoresCS)
+	body (*seqStm (savesCS @ [body] @ restoresCS) *)
 end
 
 fun procEntryExit2 (frame,body) = body @

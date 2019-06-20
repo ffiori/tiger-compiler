@@ -89,7 +89,7 @@ struct
         val ns = nodes g
         fun print_node_info n = 
             let 
-                val adjs = adj n
+                val adjs = succ n
             in  
                 print(nodename(n));
                 print("=> ");
