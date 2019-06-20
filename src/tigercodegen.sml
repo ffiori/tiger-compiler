@@ -8,6 +8,10 @@ fun codegen frame stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:instr list) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)
         
+        val imm_max = 2048 (* TODO check, varies per instruction *)
+        val imm_min = ~2048
+        fun valid_imm i = i < imm_max andalso i > imm_min
+
         fun result gen =  let    (*page 205*)
                             val t = tigertemp.newtemp()
                           in 
@@ -25,6 +29,18 @@ fun codegen frame stm = (*se aplica a cada funcion*)
           | ULE => "BGEU `s1, `s0"
           | UGT => "BLTU `s1, `s0"
           | UGE => "BGEU `s0, `s1"
+
+        fun get_binop_code e i = case e of
+            PLUS    => if (i) then "ADDI" else "ADD"
+          | MINUS   => "SUB"
+          | MUL     => "MUL"
+          | DIV     => "DIV"
+          | AND     => if (i) then "ANDI" else "AND"
+          | OR      => if (i) then "ORI" else "OR"
+          | LSHIFT  => if (i) then "SLLI" else "SLL"
+          | RSHIFT  => if (i) then "SRLI" else "SRL"
+          | ARSHIFT => if (i) then "SRAI" else "SRA"
+          | XOR     => if (i) then "XORI" else "XOR"
 
         (* safeMunchStm : tigertree.stm -> unit
            slow but safe implementations *) 
@@ -44,22 +60,28 @@ fun codegen frame stm = (*se aplica a cada funcion*)
               |tigertree.LABEL l  => emit(LABEL{ assem=l^":\n", lab=l })
               |tigertree.MOVE(tigertree.MEM(e1),e2) => (  (* Store in memory: M[e1] <- e2 *)
                 case e1 of
-                  (* BINOP(PLUS,e,CONST i) =>     (*  M[e+imm] <- e2 *)
-                    emit(OPER{assem = "SW `s0, "^Int.toString i^"(`s1)", 
-                              src = [], 
-                              dst = [munchExp e,munchExp e2], 
+                  BINOP(PLUS,e,CONST i) =>     (*  M[e+imm] <- e2 *)
+                    if valid_imm i then
+                    emit(OPER{assem = "SD `s0, "^Int.toString i^"(`s1)\n", 
+                              src = [munchExp e2,munchExp e], 
+                              dst = [], 
                               jump = NONE})
+                    else safeMunchStm s
                   | BINOP(PLUS,CONST i,e) =>   (*  M[imm+e] <- e2 *)
-                    emit(OPER{assem = "SW `s0, "^Int.toString i^", `s1", 
-                              src = [], 
-                              dst = [munchExp e,munchExp e2], 
+                    if valid_imm i then
+                    emit(OPER{assem = "SD `s0, "^Int.toString i^"(`s1)\n", 
+                              src = [munchExp e2,munchExp e], 
+                              dst = [], 
                               jump = NONE})
+                    else safeMunchStm s
                   | CONST(i) =>                 (*M[imm] <- e2*)
-                    emit(OPER{assem = "SW `x0, "^Int.toString i^", `s0", 
-                              src = [], 
-                              dst = [munchExp e2], 
-                              jump = NONE}) *)
-                   _         =>  safeMunchStm s 
+                    if valid_imm i then
+                    emit(OPER{assem = "SD `s0, "^Int.toString i^"(x0)\n", 
+                              src = [munchExp e2], 
+                              dst = [], 
+                              jump = NONE})
+                    else safeMunchStm s
+                  | _         =>  safeMunchStm s 
 
               )
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
@@ -75,7 +97,8 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                         dst = [t1], 
                         jump = NONE}) 
 
-              | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "JAL "^n^"\n", (* page 204. CHECK. *)
+              (* CHECK: call podria pisar t1 *)
+              | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "CALL "^n^"\n", (* page 204. CHECK. *)
                                                  src = munchArgs(args),
                                                  dst = [ra],
                                                  jump = NONE})
@@ -94,20 +117,23 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                         dst = [], 
                         jump = NONE})
 
+      and safeMunchExp e =
+        case e of
+          (BINOP (b, e1, e2)) =>
+            result (fn r => emit(OPER{assem=(get_binop_code b false)^" `d0, `s0, `s1\n", 
+                                      dst=[r],
+                                      src=[munchExp e1, munchExp e2], 
+                                      jump=NONE}))
+          | (MEM e) =>
+            result (fn r => emit(OPER{assem="LD `d0, 0(`s0)\n",
+                                      dst=[r], 
+                                      src=[munchExp e], 
+                                      jump=NONE}))
+          | _ => raise Fail ("[safeMunchExp] unknown thing")
+
       (* munchEXP and muncStm will produce tigerassem.Assem instructions as side effects *)
       (* munchExp : tigertree.exp -> tigertree.temp; returns the temporary in which the result is held *)
-      and munchExp e =  (*TODO p. 204 205*)
-        let fun  get_code PLUS    i  = if (i) then "ADDI" else "ADD"
-                |get_code MINUS   _  = "SUB"
-                |get_code MUL     _  = "MUL"
-                |get_code DIV     _  = "DIV"
-                |get_code AND     i  = if (i) then "ANDI" else "AND"
-                |get_code OR      i  = if (i) then "ORI" else "OR"
-                |get_code LSHIFT  i  = if (i) then "SLLI" else "SLL"
-                |get_code RSHIFT  i  = if (i) then "SRLI" else "SRL"
-                |get_code ARSHIFT i  = if (i) then "SRAI" else "SRA"
-                |get_code XOR     i  = if (i) then "XORI" else "XOR"
-        in
+      and munchExp e =  (*TODO p. 204 205*)   
         case e of
           (TEMP t) => t
           | (CONST i) =>
@@ -115,59 +141,59 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       dst=[r], 
                                       src=[], 
                                       jump=NONE}))
-          | (BINOP (b, TEMP "sp", CONST i)) =>
-            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^sp^", "^Int.toString i^"\n", 
+          | (BINOP (b, TEMP "SP", CONST i)) =>
+            result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, "^sp^", "^Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[], 
                                             jump=NONE}))
-          | (BINOP (b, TEMP "fp", CONST i)) =>
-            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, "^fp^", "^Int.toString i^"\n", 
+          | (BINOP (b, TEMP "FP", CONST i)) =>
+            result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, "^fp^", "^Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[], 
                                             jump=NONE}))
-          (*| (BINOP(b, CONST i, e1)) =>
-            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, "^    Int.toString i^"\n", 
+          | (BINOP(b, CONST i, e1)) =>
+            if valid_imm i then
+            result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^Int.toString i^"\n", 
                                             dst=[r], 
                                             src=[munchExp e1], 
                                             jump=NONE}))
+            else safeMunchExp e
           | (BINOP (b, e1, CONST i)) =>
-            result (fn r => emit(OPER{assem=(get_code b true)^" `d0, `s0, "^    Int.toString i^"\n", 
-                                            dst=[r], 
-                                            src=[munchExp e1], 
-                                            jump=NONE})) *) (* revisar imm grandes en const *)
-          | (BINOP (b, e1, e2)) =>
-            result (fn r => emit(OPER{assem=(get_code b false)^" `d0, `s0, `s1\n", 
-                                            dst=[r],
-                                            src=[munchExp e1, munchExp e2], 
-                                            jump=NONE}))
-          
-          (*Para acceder a memoria tenemos que usar "LW rd,rs1,imm"  <=> rd <- mem[rs1 + imm]*)
-          (* | (MEM (CONST i)) =>
-            result (fn r => emit(OPER{assem="LD `d0, `x0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
-                                            dst=[r], 
-                                            src=[], 
-                                            jump=NONE}))
-          | (MEM (BINOP (PLUS, e1,CONST i))) =>
-            result (fn r => emit(OPER{assem="LD `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
-                                            dst=[r], 
-                                            src=[munchExp e1], 
-                                            jump=NONE}))
-          | (MEM (BINOP (PLUS, CONST i, e2))) =>
-            result (fn r => emit(OPER{assem="LD `d0, `s0, "^    Int.toString i^"\n", (*x0: hardwired to 0*)
-                                            dst=[r], 
-                                            src=[munchExp e2], 
-                                            jump=NONE})) *) (* revisar imm grandes en const *)
-          | (MEM e) =>
-            result (fn r => emit(OPER{assem="LD `d0, 0(`s0)\n",
-                                            dst=[r], 
-                                            src=[munchExp e], 
-                                            jump=NONE}))
+            if valid_imm i then
+            result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^Int.toString i^"\n", 
+                                      dst=[r], 
+                                      src=[munchExp e1], 
+                                      jump=NONE}))
+            else safeMunchExp e
+          | (BINOP (b, e1, e2)) => safeMunchExp e
 
+          (*Para acceder a memoria tenemos que usar "LW rd,rs1,imm"  <=> rd <- mem[rs1 + imm]*)
+          | (MEM (CONST i)) =>
+            if valid_imm i then
+            result (fn r => emit(OPER{assem="LD `d0, "^Int.toString i^"(x0)\n", (*x0: hardwired to 0*)
+                                      dst=[r], 
+                                      src=[], 
+                                      jump=NONE}))
+            else safeMunchExp e
+          | (MEM (BINOP (PLUS, e1, CONST i))) =>
+            if valid_imm i then
+            result (fn r => emit(OPER{assem="LD `d0, "^Int.toString i^"(`s0)\n", (*x0: hardwired to 0*)
+                                      dst=[r], 
+                                      src=[munchExp e1], 
+                                      jump=NONE}))
+            else safeMunchExp e
+          | (MEM (BINOP (PLUS, CONST i, e2))) =>
+            if valid_imm i then
+            result (fn r => emit(OPER{assem="LD `d0, "^Int.toString i^"(`s0)\n", (*x0: hardwired to 0*)
+                                      dst=[r], 
+                                      src=[munchExp e2], 
+                                      jump=NONE}))
+            else safeMunchExp e
+          | (MEM e) => safeMunchExp e
           | (NAME _) => raise Fail ("[munchExp] There should not be NAME nodes outside of CALL (canonized tree)") 
           | (CALL _) =>  raise Fail ("[munchExp] There should not be CALL nodes outside EXP (canonized tree)") 
           | (ESEQ _ ) =>  raise Fail ("[munchExp] There should not be ESEQ nodes anymore (canonized tree)") 
-        end
-            
+                
           
 
         (* munchArgs : ArgIndex * arg list -> temp list   page 204
