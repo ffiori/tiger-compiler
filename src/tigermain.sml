@@ -62,11 +62,6 @@ fun main(args) =
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
-        fun showCodegen x = 
-            List.app
-            (fn y => List.app (fn w => print(tigerassem.format (fn f => f) w)) y)
-            x
-
         (* procesarBody : stm list * frame -> instr list *)
         fun procesarBody (bs,frame) =  (* bs son los statements que componen el body de la función con ese frame *)
             let
@@ -80,7 +75,7 @@ fun main(args) =
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
         val functions_code = List.map procesarBody canonProcs
-        val _ = showCodegen (List.map (#body o #1) functions_code)
+        val _ = tigerassem.showAssem (List.map (#1) functions_code)
         
         (* TODO: use tigerassem.format function to convert instrs to a string of assembly code *)
 
