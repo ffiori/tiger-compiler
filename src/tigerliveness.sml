@@ -19,6 +19,7 @@ struct
         let
             fun computeLivenessForNode(current_node : tigergraph.node) =
                 let
+                    val _ = print(" *** Itero sobre node "^tigergraph.nodename(current_node)^" ********\n")
                     val def_map : ((node, tigertemp.temp list) tigertab.Tabla) = #def flow_graph
                     val use_map = #use flow_graph
 
@@ -41,12 +42,27 @@ struct
                     val def_table = tabInserList(tabNueva(), List.map (fn x=>(x,())) def)
                     val livein_node = use_node U (old_liveout_node -- def_table)
 
+                    val _ = print("old_liveut_node_table\n")
+                    val _ = tigertab.printTabla(old_liveout_node,fn(a,b) => print(a^"\n"))
+
+                    val _ = print("def_table\n")
+                    val _ = tigertab.printTabla(def_table,fn(a,b) => print(a^"\n"))
+
+                    val _ = print("livein_node\n")
+                    val _ = tigertab.printTabla(livein_node,fn(a,b) => print(a^"\n"))
+
+                    val _ = print("Calculating liveout set\n")
+
                     (* liveout_node = U (in[s]) forall s in succ[n] *)
                     val liveout_node : liveSet = 
                         List.foldl
                         (fn (n,t) => if tabEsta(n, !livein) then t U (tabSaca(n, !livein)) else t)
                         (tabNueva())
                         (succ(current_node)) (* succ : node -> node list *)
+
+                    val _ = print("liveout_node\n")
+                    val _ = tigertab.printTabla(liveout_node,fn(a,b) => print(a^"\n"))
+
 
                     val _ = livein := tabInserta(current_node, livein_node, !livein)
                     val _ = liveout := tabInserta(current_node, liveout_node, !liveout)
