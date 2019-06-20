@@ -116,7 +116,18 @@ fun exp(InFrame k) e = MEM(BINOP(PLUS, TEMP(fp), CONST k))
 
 fun externalCall(s, l) = CALL(NAME s, l)
 
-fun procEntryExit1 (frame,body) = body (* mete los move *)
+fun seqStm [] = raise Fail "seq vacio!"
+    | seqStm [s] = s
+    | seqStm (x::xs) = tigertree.SEQ (x, seqStm xs)
+
+fun procEntryExit1 (frame,body) = let 
+	val CStemps = List.map (fn r => (TEMP (tigertemp.newtemp()), TEMP(r))) calleesaves
+	val savesCS = List.map MOVE CStemps
+	val restoresCS = List.map (MOVE o (fn (t, r) => (r, t))) CStemps
+
+in
+	seqStm (savesCS @ [body] @ restoresCS)
+end
 
 fun procEntryExit2 (frame,body) = body @
 	[tigerassem.OPER {
