@@ -30,6 +30,8 @@ val tabClaves : ('a, 'b) Tabla -> 'a list
 
 val tabEquals : ('a, 'b) Tabla * ('a, 'b) Tabla * ('b * 'b -> bool) -> bool
 
+val printTabla : ('a ,'b) Tabla * ( ('a * 'b) -> unit) -> unit
+
 infix --
 val -- : ('a, 'b) Tabla * ('a, 'b) Tabla -> ('a, 'b) Tabla
 

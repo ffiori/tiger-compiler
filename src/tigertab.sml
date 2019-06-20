@@ -71,6 +71,16 @@ fun tabFiltraKey(f, t) =
 fun tabPrimer(f, t) = hd(List.filter (fn(a, b) => f b) (listItems t))
 fun tabClaves t = List.map (fn(x, y) => x) (listItems t)
 
+fun printTabla (t,f) =
+	let
+		val _ = List.app f (tabAList(t))
+	in
+		()
+	end
+
+
+
+
 fun tabEquals(t1 : ('a, 'b) Tabla, t2 : ('a, 'b) Tabla, compFunc : ('b * 'b -> bool)) =
 let
     fun compareKV(k,v,table) =
@@ -102,3 +112,6 @@ in
 end
 
 end
+
+
+
