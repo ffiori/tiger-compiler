@@ -78,7 +78,7 @@ struct
                     SOME lst => List.map (#1) (tabAList lst)
                     | _ => raise Fail "[getTempList] node not found! Maybe while using liveout (return value of interferenceGraph).\n"
         in
-            (flow_graph, getTempList)
+            getTempList
         end
         
 end

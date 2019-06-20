@@ -36,6 +36,14 @@ val adjList_default_value = empty(String.compare)
 
 val degree : ((tigertemp.temp, int) dict) ref = ref (mkDict(String.compare))
 val degree_default_value = 0
+
+fun printIgraphList() =
+    let
+    in () end
+    
+fun printIgraphEdges() = ()
+
+fun print_igraph() = (printIgraphList(); printIgraphEdges())
 (************** End Graph ***************)
 
 val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO where does this get filled? *)
@@ -223,7 +231,7 @@ fun coalesce() =
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
         val (flow_graph, node_list) = tigerflow.instrs2graph body
-        val (interf_graph, liveout) : tigerliveness.igraph * (tigergraph.node -> tigertemp.temp list) =
+        val liveout : tigergraph.node -> tigertemp.temp list =
             tigerliveness.interferenceGraph flow_graph
         
         (* Declare and initialize stuff TODO por ahora estoy dejando todo vacío pero algunas cosas tienen que tener cosas *)
@@ -254,16 +262,11 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         *)
         
         (**************** build() (as in the book) ********************)
-        (* WARNING: no entiendo bien qué hace el libro acá, 
-         * hace live=liveOut(b) donde b es todo el body de la función.
-         * Interpreto que es el liveOut del último nodo del body. *)
-        val last_node = List.last node_list (* node_list está en orden con las instrucciones de body *)
-        val live : (tigertemp.temp Splayset.set) ref = ref (empty(String.compare))
-        val _ = live := addList (!live, liveout last_node)
-        
         fun processInstruction (instr,node) =
             let
-                val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = interf_graph
+                val live : (tigertemp.temp Splayset.set) ref = ref (empty(String.compare))
+                val _ = live := addList (!live, liveout node)
+                val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
                 val def_set = ref (empty(String.compare))
                 val _ = def_set := addList(!def_set, tigertab.tabSaca(node,def))
                 val use_set = ref (empty(String.compare))
@@ -282,11 +285,15 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
                         in worklistMoves := add(!worklistMoves,instr) end
                     else ()
                 
+(*
                 val _ = live := union(!live,!def_set)
+*)
                 val _ = Splayset.app
                         (fn d => Splayset.app (fn l => addEdge(l,d)) (!live))
                         (!def_set)
+(*
                 val _ = live := union(!use_set, difference(!live,!def_set))
+*)
             in () end
         
         val _ = List.app processInstruction ((List.rev o ListPair.zip) (body, node_list))
