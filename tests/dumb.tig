@@ -2,5 +2,5 @@ let
 	var x:= 9
 	var y:= 7
 in 
-	x+y
+if(x>y) then 999 else 123
 end
