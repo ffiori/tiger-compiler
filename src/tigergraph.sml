@@ -81,5 +81,27 @@ struct
 
     fun nodename(g,i:int) = "n" ^ Int.toString(i)
 
+
+
+
+    fun print_graph(g) =
+     let 
+        val ns = nodes g
+        fun print_node_info n = 
+            let 
+                val adjs = adj n
+            in  
+                print(nodename(n));
+                print("=> ");
+                List.app (fn a => print(nodename(a)^" ")) adjs;
+                print("\n")
+            end
+
+        val _ = List.app (fn n => print_node_info n) ns
+     in
+        ()
+    end
+
+
 end
 

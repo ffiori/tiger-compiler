@@ -14,6 +14,14 @@ struct
   (* Takes a list of instructions and returns a flow graph,
     along with a list of nodes that correspond exactly to the instructions. *)
 
+
+  fun print_graph (g) =
+    let 
+      val _ = tigergraph.print_graph(g)
+    in
+      ()
+    end
+
   fun instrs2graph il = 
       let
           (* 0 - Create a new flow graph *)

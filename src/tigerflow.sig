@@ -10,4 +10,6 @@ sig
     (* page 224 *)
     val instrs2graph : tigerassem.instr list -> flowgraph * tigergraph.node list 
 
+    val print_graph : tigergraph.graph -> unit
+
 end

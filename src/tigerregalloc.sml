@@ -250,7 +250,11 @@ fun coalesce() =
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
-        val (flow_graph, fnode_list) = tigerflow.instrs2graph body
+        val (flow_graph, node_list) = tigerflow.instrs2graph body
+        val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
+        val _ = print("FLOW GRAPH: \n ")
+        val _ = tigerflow.print_graph(control)
+
         val liveout : tigergraph.node -> tigertemp.temp list =
             tigerliveness.interferenceGraph flow_graph
         
@@ -285,8 +289,7 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         fun processInstruction (instr,fnode) =
             let
                 val live : (tigertemp.temp Splayset.set) ref = ref (empty(String.compare))
-                val _ = live := addList (!live, liveout fnode)
-                val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
+                val _ = live := addList (!live, liveout node)
                 val def_set = ref (empty(String.compare))
                 val _ = def_set := addList(!def_set, tigertab.tabSaca(fnode,def))
                 val use_set = ref (empty(String.compare))

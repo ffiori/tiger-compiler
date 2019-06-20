@@ -18,6 +18,8 @@ sig
 
     val nodename: node->string  (* for debugging *)
 
+    val print_graph : graph -> unit
+
     type 'info table = (node,'info) tigertab.Tabla (* Para guardar informacion de los nodos*)
 
 end
