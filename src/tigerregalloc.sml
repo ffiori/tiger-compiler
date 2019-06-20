@@ -23,7 +23,7 @@ fun safeFind(map,key,default_value) =
 		| NONE => (Splaymap.insert(map,key,default_value); default_value)
 *)
 
-(**************** Graph *****************)
+(************************ Interference Graph *************************)
 fun stringPairCompare ((s1,s2),(t1,t2)) =
     if s1=t1 then String.compare(s2,t2) else String.compare(s1,t1)
 
@@ -39,12 +39,32 @@ val degree_default_value = 0
 
 fun printIgraphList() =
     let
-    in () end
+        val _ = print("Interference graph - Adjacency list model\n\n")
+        fun printNeighbors(neighbors) =
+            app
+            (fn n => print(n^" "))
+            neighbors
+        val _ =
+            Splaymap.app
+            (fn (node,neighbors) => (print(node^": "); printNeighbors(neighbors); print("\n")))
+            (!adjList)
+    in print("\n") end
     
-fun printIgraphEdges() = ()
+fun printIgraphEdges() =
+    let
+        val _ = print("Interference graph - Adjacency set model (set of edges)\n\n")
+        fun printNeighbors(neighbors) =
+            app
+            (fn n => print(n^" "))
+            neighbors
+        val _ =
+            app
+            (fn (n1,n2) => print(n1^" -> "^n2^"\n"))
+            (!adjSet)
+    in print("\n") end
 
-fun print_igraph() = (printIgraphList(); printIgraphEdges())
-(************** End Graph ***************)
+fun printIgraph() = (printIgraphList(); printIgraphEdges())
+(********************** End Interference Graph ***********************)
 
 val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO where does this get filled? *)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO idem precolored *)
@@ -230,7 +250,7 @@ fun coalesce() =
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
-        val (flow_graph, node_list) = tigerflow.instrs2graph body
+        val (flow_graph, fnode_list) = tigerflow.instrs2graph body
         val liveout : tigergraph.node -> tigertemp.temp list =
             tigerliveness.interferenceGraph flow_graph
         
@@ -262,18 +282,18 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         *)
         
         (**************** build() (as in the book) ********************)
-        fun processInstruction (instr,node) =
+        fun processInstruction (instr,fnode) =
             let
                 val live : (tigertemp.temp Splayset.set) ref = ref (empty(String.compare))
-                val _ = live := addList (!live, liveout node)
+                val _ = live := addList (!live, liveout fnode)
                 val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
                 val def_set = ref (empty(String.compare))
-                val _ = def_set := addList(!def_set, tigertab.tabSaca(node,def))
+                val _ = def_set := addList(!def_set, tigertab.tabSaca(fnode,def))
                 val use_set = ref (empty(String.compare))
-                val _ = use_set := addList(!use_set, tigertab.tabSaca(node,use))
+                val _ = use_set := addList(!use_set, tigertab.tabSaca(fnode,use))
                 
                 val _ = 
-                    if tigertab.tabEsta(node,ismove) andalso tigertab.tabSaca(node,ismove) (* para que no explote, se puede emprolijar *)
+                    if tigertab.tabEsta(fnode,ismove) andalso tigertab.tabSaca(fnode,ismove) (* para que no explote, se puede emprolijar *)
                     then
                         let
                             val _ = live := difference(!live, !use_set)
@@ -296,7 +316,8 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
 *)
             in () end
         
-        val _ = List.app processInstruction ((List.rev o ListPair.zip) (body, node_list))
+        val _ = List.app processInstruction ((List.rev o ListPair.zip) (body, fnode_list))
+        val _ = printIgraph() (* DEBUGGING *)
         (************************ build() end *************************)
         
         val _ = makeWorklist()
