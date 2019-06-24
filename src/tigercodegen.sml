@@ -32,6 +32,12 @@ fun codegen frame stm = (*se aplica a cada funcion*)
           | UGT => "BLTU `s1, `s0"
           | UGE => "BGEU `s0, `s1"
 
+        fun binop_supports_imm e = case e of
+            MINUS => false
+          | MUL => false
+          | DIV => false
+          | _ => true
+
         fun get_binop_code e i = case e of
             PLUS    => if (i) then "ADDI" else "ADD"
           | MINUS   => "SUB"
@@ -154,14 +160,14 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                             src=[], 
                                             jump=NONE}))
           | (BINOP(b, CONST i, e1)) =>
-            if valid_imm i then
+            if valid_imm i andalso binop_supports_imm b then
             result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^ppint i^"\n", 
                                             dst=[r], 
                                             src=[munchExp e1], 
                                             jump=NONE}))
             else safeMunchExp e
           | (BINOP (b, e1, CONST i)) =>
-            if valid_imm i then
+            if valid_imm i andalso binop_supports_imm b then
             result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^ppint i^"\n", 
                                       dst=[r], 
                                       src=[munchExp e1], 
