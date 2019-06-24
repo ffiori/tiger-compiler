@@ -190,7 +190,11 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       jump=NONE}))
             else safeMunchExp e
           | (MEM e) => safeMunchExp e
-          | (NAME _) => raise Fail ("[munchExp] There should not be NAME nodes outside of CALL (canonized tree)") 
+          | (NAME n) => 
+            result (fn r => emit(OPER{assem="LA `d0, "^n^"\n",
+                                      dst=[r], 
+                                      src=[], 
+                                      jump=NONE}))
           | (CALL _) =>  raise Fail ("[munchExp] There should not be CALL nodes outside EXP (canonized tree)") 
           | (ESEQ _ ) =>  raise Fail ("[munchExp] There should not be ESEQ nodes anymore (canonized tree)") 
                 
