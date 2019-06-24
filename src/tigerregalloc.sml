@@ -4,7 +4,7 @@ struct
 open Splaymap
 open Splayset
 
-type allocation = (tigertemp.temp, tigerframe.register) tigertab.Tabla
+type allocation = (tigertemp.temp, tigerframe.register) dict
 
 (* Tries to delete element from set. Returns same set if element is not in set. *)
 fun safeDelete(set,element) = (delete(set,element) handle _ => set)
@@ -91,7 +91,7 @@ val moveList_default_value = empty(tigerassem.compare)
 
 val alias : ((tigertemp.temp, tigertemp.temp) dict) ref = ref (mkDict(String.compare))
 
-val color : ((tigertemp.temp, string) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
+val color : ((tigertemp.temp, tigerframe.register) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
 
 
 fun addEdge (u,v) =
@@ -140,8 +140,8 @@ fun makeWorklist() =
 fun first_element set = hd(Splayset.listItems(set))
 
 fun push(n,list) = (n::list)
-fun pop (x::xs) = x
-  | pop [] = raise Fail "[pop] Stack vacío!\n"
+fun pop (ref []) = raise Fail "[pop] Stack vacío!\n"
+| pop (ls) = (ls := List.drop(!ls,1); hd (!ls))
 
 (* Para cada nodo n en nodes, agarra todos los moves involucrados a n que no estaban listos
    para coalescer y los marca como listos para coalescing*)
@@ -312,7 +312,7 @@ fun assignColors() =
     let
         fun while_body() = 
             let
-                val n = pop(!selectStack) (* TODO: pop no borra el elemento, hace "top" en realidad *)
+                val n = pop(selectStack)
                 val okColors = ref ( addList(empty(String.compare),tigerframe.usable_register_list) )
                 val _ = Splayset.app
                         (fn w => if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
@@ -346,31 +346,99 @@ fun assignColors() =
         ()  
     end
 
-fun rewriteProgram() = (* TODO :) *)
+fun rewriteProgram(frm,body) = (* TODO :) *)
     let
+        val newTemps = ref(Splayset.empty(String.compare))
+        
+        (* devuelve lista de instr correspondientes a fetchear y storear el valor que estaba en el temporal node en memoria. *)
+        fun processInstr node address (instr,ilist) =
+            let
+                val ilist_src =
+                    if List.exists (fn x=>x=node) (tigerassem.getsrc instr)
+                    then 
+                        let
+                            val t = tigertemp.newtemp()
+                            val _ = newTemps := add(!newTemps,t)
+                            val offset = case address of 
+                                tigerframe.InFrame k => k
+                                | _ => raise Fail "rewriteProgram no deberían haber InReg acá\n"
+                            val fetch_instr =
+                                tigerassem.OPER{
+                                    assem="LD `d0, "^tigerpp.ppint offset^"("^tigerframe.fp^")\n",
+                                    dst=[t], 
+                                    src=[], 
+                                    jump=NONE }
+                            val instr' = tigerassem.replaceTempSrc instr node t
+                        in [fetch_instr,instr'] end
+                    else [instr]
+                
+                val instr' = List.last ilist_src
+                val ilist_dst =
+                    if List.exists (fn x=>x=node) (tigerassem.getdst instr)
+                    then 
+                        let
+                            val t = tigertemp.newtemp()
+                            val _ = newTemps := add(!newTemps,t)
+                            val offset = case address of 
+                                tigerframe.InFrame k => k
+                                | _ => raise Fail "rewriteProgram no deberían haber InReg acá\n"
+                            val store_instr =
+                                tigerassem.OPER{
+                                    assem="SD `s0, "^tigerpp.ppint offset^"("^tigerframe.fp^")\n",
+                                    dst=[], 
+                                    src=[t], 
+                                    jump=NONE }
+                            val instr'' = tigerassem.replaceTempDst instr' node t
+                        in [instr'',store_instr] end
+                    else [instr']
+            in
+                List.drop(ilist_src,1)@ilist_dst
+            end
+            
+        fun replaceTemp(node,body) =
+            let
+                val address = tigerframe.allocLocal frm true 
+                val body' =
+                    List.foldl
+                    (processInstr node address)
+                    []
+                    body
+            in body' end
+    
+        val new_body =
+            List.foldl
+            replaceTemp
+            body
+            (listItems(!spilledNodes))
+        
+        val _ = spilledNodes := empty(String.compare)
+        val _ = initial := union(!coloredNodes, union(!coalescedNodes,!newTemps))
+        val _ = coloredNodes := empty(String.compare)
+        val _ = coalescedNodes := empty(String.compare)
     in
-        ()
+        new_body
     end
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
     let
-(*
+        (* DEBUG
         val _ = print("ASSEM LIST: \n ")
         val _ = List.app (fn w => print(tigerassem.format (fn f => f) w)) body
-*)
+        *)
         val (flow_graph, fnode_list) = tigerflow.instrs2graph body
         val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
-(*
+
+        (* DEBUG
         val _ = print("FLOW GRAPH: \n ")
         val _ = tigerflow.print_graph(control)
-*)
+        *)
 
         val liveout : tigergraph.node -> tigertemp.temp list =
             tigerliveness.interferenceGraph flow_graph
         
-(*
+        (* DEBUG
         val _ = List.app (fn n=>(print("Node "^tigergraph.nodename(n)^": "); List.app (fn t=>print(t^" ")) (liveout n); print("\n"))) fnode_list
-*)
+        *)
         
         (* Declare and initialize stuff TODO por ahora estoy dejando todo vacío pero algunas cosas tienen que tener cosas *)
         val _ = simplifyWorklist := empty(String.compare)
@@ -395,9 +463,8 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         val _ = adjList := mkDict(String.compare)
         
         val _ = alias := mkDict(String.compare)
-        (*
-        val color : ((tigertemp.temp, string) dict) ref = ref (empty(String.compare)) (* mapea temporales a registros posta *)
-        *)
+        val color : ((tigertemp.temp, string) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
+        
         
         (**************** build() (as in the book) ********************)
         fun processInstruction (instr,fnode) =
@@ -447,11 +514,11 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
                     if Splayset.numItems(!simplifyWorklist) <> 0
                     then simplify()
                     else if Splayset.numItems(!worklistMoves) <> 0
-                    then () (*TODO*)
+                    then coalesce() (*TODO*)
                     else if Splayset.numItems(!freezeWorklist) <> 0
-                    then () (*TODO*)
+                    then freeze() (*TODO*)
                     else if Splayset.numItems(!spillWorklist) <> 0
-                    then () (*TODO*)
+                    then selectSpill() (*TODO*)
                     else ()
             in
                 if  Splayset.numItems(!simplifyWorklist) = 0 andalso
@@ -462,15 +529,20 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
                 else loop()
             end
         
-(*
+
         val _ = assignColors()
-        val _ =
+        val answer =
             if Splayset.numItems(!spilledNodes) <> 0
-            then rewriteProgram(!spilledNodes); alloc frm body
-            else ()
-*)
+            then 
+                let val body = rewriteProgram(frm,body)
+                    val (body,color)  = alloc frm body
+                in
+                    body
+                end
+            else body
+
     in
-        (body, tigertab.tabNueva()) (* TODO *)
+        (answer, !color) (* TODO *)
     end
 
 end

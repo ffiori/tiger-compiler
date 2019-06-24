@@ -21,6 +21,31 @@ structure tigerassem = struct
             dst: temp,
             src: temp}
 
+	(* Reemplaza el temporal t1 por t2 en src de instr *)
+	fun replaceTempSrc instr t1 t2 =
+		case instr of
+			LABEL _ => instr
+			| MOVE {src=src,dst=dst,assem=assem} =>
+				MOVE {src=if src=t1 then t2 else src, dst=dst, assem=assem}
+			| OPER {src=src,dst=dst,assem=assem,jump=jump} =>
+				OPER {src=List.map (fn t=>if t=t1 then t2 else t) src, dst=dst, assem=assem, jump=jump}
+
+	fun replaceTempDst instr t1 t2 =
+		case instr of
+			LABEL _ => instr
+			| MOVE {src=src,dst=dst,assem=assem} =>
+				MOVE {dst=if dst=t1 then t2 else dst, src=src, assem=assem}
+			| OPER {src=src,dst=dst,assem=assem,jump=jump} =>
+				OPER {dst=List.map (fn t=>if t=t1 then t2 else t) dst, src=src, assem=assem, jump=jump}
+
+	fun getsrc (OPER {src=src,...}) = src
+	| getsrc (MOVE {src=src,...}) = [src]
+	| getsrc _ = []
+	
+	fun getdst (OPER {dst=dst,...}) = dst
+	| getdst (MOVE {dst=dst,...}) = [dst]
+	| getdst _ = []
+	
     fun compare (MOVE i1, MOVE i2) = 
         if #assem i1 = #assem i2
         then
