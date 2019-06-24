@@ -29,7 +29,8 @@ GRALOBJS = tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
 	tigertemp.uo tigertopsort.uo tigertree.uo tigerframe.uo \
 	tigertrans.uo tigerit.uo tigerpila.uo tigermuestratipos.uo \
 	tigercanon.uo tigerinterp.uo tigercodegen.uo tigergraph.uo \
-	tigerflow.uo tigerliveness.uo tigercolor.uo tigerregalloc.uo
+	tigerflow.uo tigerliveness.uo tigercolor.uo tigerregalloc.uo \
+	tigersimpleregalloc.uo
 
 all: tiger
 

@@ -414,6 +414,6 @@ fun transProg ex =
         (* val _ = ppvenv tab_vars *)
         (* val _ = pptenv tab_tipos *)
         val _ = transExp(tab_vars, tab_tipos) main
-    in  print "bien!\n" end
+    in  print "# bien!\n" end
 
 end

@@ -27,11 +27,11 @@ datatype access = InFrame of int | InReg of tigertemp.label
 (* TODO: PAG 208 *)
 
 
-val fp = "FP"               (* frame pointer *)
-val sp = "SP"               (* stack pointer *)
-val rv = "A0"               (* return value  *)
-val ra = "RA"               (* return address *)
-val zero = "ZERO"
+val fp = "s0"               (* frame pointer *)
+val sp = "sp"               (* stack pointer *)
+val rv = "a0"               (* return value  *)
+val ra = "ra"               (* return address *)
+val zero = "x0"
 val wSz = 8                 (* word size in bytes *)
 val log2WSz = 3             (* base two logarithm of word size in bytes *)
 val fpPrev = 0              (* offset (bytes) *)
@@ -43,9 +43,9 @@ val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
 val localsGap = ~4          (* bytes *)
 val specialregs = [ra, fp, sp, zero]
-val argregs = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7"]
-val callersaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
-val calleesaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
+val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
+val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
+val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"]
 val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 val usable_register_list = argregs @ callersaves @ calleesaves
 
@@ -142,6 +142,7 @@ fun procEntryExit2 (frame,body) = body @
 
 fun procEntryExit3 (frame: frame, body) = {
     prolog = "# PROCEDURE " ^ #name frame ^ "\n"^
+             ".global " ^ #name frame ^ "\n"^
              #name frame^":\n",
     body = body,
     epilog = "# END " ^ #name frame ^ "\n\n"

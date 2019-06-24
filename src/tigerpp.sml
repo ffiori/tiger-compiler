@@ -6,6 +6,8 @@ struct
 open tigerabs
 open PP
 
+fun ppint i = if i < 0 then "-"^ppint (~i) else Int.toString i
+
 fun ppexpr pps e0 = 
 	let
 		fun ppf{name,escape,typ} =

@@ -3,24 +3,26 @@ struct
 	structure frame = tigerframe
 	open tigerassem
 	
+	fun ppint x = tigerpp.ppint x
+
 	fun simpleregalloc (frm:frame.frame) (body:instr list) =
 	let
 		(* COMPLETAR: Temporarios que ya tienen color asignado (p.ej, el temporario que representa a rax) *)
-		val precolored = ["a", "b", "c", "d", "e", "f"]
+		val precolored = frame.usable_register_list @ frame.specialregs
 		(* COMPLETAR: Temporarios que se pueden usar (p.ej, el temporario que representa a rax. Diferencia con precolored: el temporario que representa a rbp no se puede usar) *)
-		val asignables = ["b", "c", "d", "e", "f"]
+		val asignables = frame.usable_register_list
 		(* COMPLETAR: movaMem crea una instrucción que mueve un temporario a memoria. movaTemp, de memoria a un temporario.*)
 		fun movaMem(temp, mempos) =
 			let
-				val desp = if mempos<0 then " - " ^ Int.toString(~mempos) else if mempos>0 then " + " ^ Int.toString(mempos) else ""
+				val desp = ppint (~mempos * 8)
 			in
-				OPER {assem="mov `s0 M(a" ^ desp ^ ")", src=[temp], dst=[], jump=NONE}
+				OPER {assem="SD `s0, " ^ desp ^"(gp)\n", src=[temp], dst=[], jump=NONE}
 			end
 		fun movaTemp(mempos, temp) =
 			let
-				val desp = if mempos<0 then " - " ^ Int.toString(~mempos) else if mempos>0 then " + " ^ Int.toString(mempos) else ""
+				val desp = ppint (~mempos * 8)
 			in
-				OPER {assem="mov M(a" ^ desp ^ ") `d0", src=[], dst=[temp], jump=NONE}
+				OPER {assem="LD `d0, "^desp^"(gp)\n", src=[], dst=[temp], jump=NONE}
 			end
 		val temps =
 			let
@@ -58,7 +60,7 @@ struct
 				val uncolored = Splayset.listItems(Splayset.difference(Splayset.union(dstset, srcset), precoloredSet))
 
 				val N = length(uncolored)
-				val tempcols = ListPair.zip(uncolored, List.take(colores, N))
+				val tempcols = ListPair.zip(uncolored, colores) (*List.take(colores, N)) *)
 				fun getTempCol T =
 				let
 					fun gtc T [] = if Splayset.member(precoloredSet, T) then T else raise Fail("Temporario no encontrado: "^T)
