@@ -65,7 +65,7 @@ fun printIgraphEdges() =
 
 fun printIgraph() = (printIgraphList(); printIgraphEdges())
 (********************** End Interference Graph ***********************)
-
+(* quizas esto no deberia ser global, deberia estar todo metido en el let de alloc y ser local.*)
 val precolored : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO where does this get filled? *)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* TODO idem precolored *)
 
@@ -90,9 +90,9 @@ val moveList : ((tigertemp.temp, tigerassem.instr set) dict) ref =
 val moveList_default_value = empty(tigerassem.compare)
 
 val alias : ((tigertemp.temp, tigertemp.temp) dict) ref = ref (mkDict(String.compare))
-(*
-val color : ((tigertemp.temp, string) dict) ref = ref (empty(String.compare)) (* mapea temporales a registros posta *)
-*)
+
+val color : ((tigertemp.temp, string) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
+
 
 fun addEdge (u,v) =
     if u<>v andalso not (member(!adjSet,(u,v)))
@@ -117,11 +117,13 @@ fun addEdge (u,v) =
 fun adjacent n = 
     difference(safeFind(!adjList, n, adjList_default_value), addList(!coalescedNodes, !selectStack))
 
+(* nodemoves : tigertemp.temp -> tigerassem.instr set *)
 fun nodeMoves n =
     intersection(safeFind(!moveList, n, moveList_default_value), union(!activeMoves, !worklistMoves))
 
 fun moveRelated n = Splayset.numItems(nodeMoves(n)) <> 0
 
+(*  Para cada nodo en initial, llenar las listas spillWorklist/freezeWorklist/simplifyWorklist *)
 fun makeWorklist() =
     Splayset.app
     (fn n => 
@@ -141,6 +143,8 @@ fun push(n,list) = (n::list)
 fun pop (x::xs) = x
   | pop [] = raise Fail "[pop] Stack vacío!\n"
 
+(* Para cada nodo n en nodes, agarra todos los moves involucrados a n que no estaban listos
+   para coalescer y los marca como listos para coalescing*)
 fun enableMoves nodes =
     let fun processMove m =
             if member(!activeMoves,m)
@@ -154,7 +158,7 @@ fun enableMoves nodes =
         (fn n => Splayset.app processMove (nodeMoves(n)))
         nodes
     end
-    
+
 fun decrementDegree node =
     let val deg = safeFind(!degree,node,degree_default_value)
         val _ = degree := insert(!degree,node,deg-1)
@@ -207,17 +211,35 @@ fun conservative node_set =
         node_set
     in k < tigerframe.usable_registers end
 
-fun combine(u,v) = () (*TODO*)
+fun combine(u,v) = 
+    let 
+        val _ = if member(!freezeWorklist,v) 
+                then freezeWorklist:=delete(!freezeWorklist,v)
+                else spillWorklist :=delete(!spillWorklist,v)
+        val _ = coalescedNodes:=add(!coalescedNodes,v)
+        val _ = alias := insert(!alias,v,u);
+        val mlu = safeFind(!moveList, u, moveList_default_value)
+        val mlv = safeFind(!moveList, v, moveList_default_value)
+        val _ = moveList := insert(!moveList,u,union(mlu,mlv))  (*Errata*)
+        val _ = enableMoves(Splayset.singleton String.compare v)  (*Errata*)
+        val _ = Splayset.app (fn t => (addEdge(t,u) ; decrementDegree t) ) (adjacent v)
+        val _ = if (safeFind(!degree, u, degree_default_value)>=tigerframe.usable_registers) andalso member(!freezeWorklist,u) 
+                then (freezeWorklist:=delete(!freezeWorklist,u) ; spillWorklist := add(!spillWorklist,u) )
+                else ()
+    
+    in
+        ()
+    end  
 
 fun coalesce() =
     let
         val m = first_element (!worklistMoves)
-        val (x,y) = (* TODO cuál es x y cuál es y? src y dst, o al revés? *)
+        val (x,y) =  (*x es src, y es dst*)
             case m of
                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
         val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
-        val _ = safeDelete(!worklistMoves,m)
+        val _ = worklistMoves:= safeDelete(!worklistMoves,m)
         
         fun bigCondition() =
             let
@@ -233,7 +255,7 @@ fun coalesce() =
     in
         if u=v
         then ((coalescedMoves := add(!coalescedMoves,m)); addWorklist(u))
-        else if member(!precolored,u) orelse member(!adjSet,(u,v))
+        else if member(!precolored,v) orelse member(!adjSet,(u,v))
         then (
             constrainedMoves := add(!constrainedMoves,m);
             addWorklist(u);
@@ -246,6 +268,87 @@ fun coalesce() =
             addWorklist(u)
         )
         else (activeMoves := add(!activeMoves,m))
+    end
+
+fun freezeMoves(u) =
+    let
+        val m = first_element (nodeMoves(u))
+        val (x,y) = 
+            case m of
+                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
+                | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
+        val v = if (getAlias x = getAlias y) then getAlias x else getAlias y
+        val _ = activeMoves:= safeDelete(!activeMoves,m)
+        val _ = frozenMoves := add(!frozenMoves,m)
+        val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso (safeFind(!degree, v, degree_default_value)<tigerframe.usable_registers))
+                then (freezeWorklist:=safeDelete(!freezeWorklist,v) ; simplifyWorklist := add(!simplifyWorklist,v))
+                else ()
+    in
+        ()
+    end
+
+fun freeze () =
+    let
+        val u = first_element (!freezeWorklist)
+        val _ = freezeWorklist:= safeDelete(!freezeWorklist,u)
+        val _ = simplifyWorklist := add(!simplifyWorklist,u)
+        val _ = freezeMoves(u)
+    in
+        ()
+    end
+
+fun selectSpill() = 
+    let
+        fun heuristic ls = first_element (!ls) (* TODO: Algo mas inteligente (O NO) *)
+        val m = heuristic spillWorklist
+        val _ = spillWorklist:= safeDelete(!spillWorklist,m)
+        val _ = simplifyWorklist := add(!simplifyWorklist,m)
+        val _ = freezeMoves(m)
+
+    in
+        ()
+    end
+
+fun assignColors() = 
+    let
+        fun while_body() = 
+            let
+                val n = pop(!selectStack) (* TODO: pop no borra el elemento, hace "top" en realidad *)
+                val okColors = ref ( addList(empty(String.compare),tigerframe.usable_register_list) )
+                val _ = Splayset.app
+                        (fn w => if  (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
+                                 then okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
+                                 else () )
+                        (safeFind(!adjList, n, adjList_default_value))
+                val _ = if (Splayset.isEmpty(!okColors))
+                        then spilledNodes := add(!spilledNodes,n)
+                        else (
+                            let
+                                val _ = coloredNodes := add(!coloredNodes,n)
+                                val c = first_element(!okColors)
+                                val _ = color := insert(!color,n,c)
+                            in 
+                                ()
+                            end
+                        )
+            in
+                if (List.null(!selectStack)) 
+                then ()
+                else while_body()
+            end
+
+        val _ = if (List.null(!selectStack))  
+                then ()
+                else while_body() 
+        val _ = Splayset.app (fn n => color := insert(!color,n,Splaymap.find(!color, getAlias(n)))) (!coalescedNodes)
+    in
+        ()  
+    end
+
+fun rewriteProgram() = (* TODO :) *)
+    let
+    in
+        ()
     end
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 

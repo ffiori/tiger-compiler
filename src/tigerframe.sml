@@ -47,6 +47,7 @@ val argregs = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 val callersaves = ["T0", "T1", "T2", "T3", "T4", "T5", "T6"]
 val calleesaves = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11"]
 val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
+val usable_register_list = argregs @ callersaves @ calleesaves
 
 val accessListInicial = [InFrame fpPrevLev]
 
