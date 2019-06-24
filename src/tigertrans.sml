@@ -174,7 +174,7 @@ let
 in
     Ex( ESEQ(seq[MOVE(TEMP ra, a),
                  MOVE(TEMP ri, i),
-                 EXP(externalCall("_checkindex", [TEMP ra, TEMP ri]))],  (*Does it check for nil?*)
+                 EXP(externalCall("_checkIndexArray", [TEMP ra, TEMP ri]))],  (*Does it check for nil?*)
                  MEM(BINOP(PLUS, TEMP ra,
                      BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
@@ -202,7 +202,7 @@ let
 in
     Ex (ESEQ(seq [MOVE(TEMP ts,s),
                   MOVE(TEMP ti,i),
-                  EXP(externalCall("_createArray", [TEMP ts, TEMP ti])),
+                  EXP(externalCall("_initArray", [TEMP ts, TEMP ti])),
                   MOVE(TEMP t,TEMP rv)], TEMP t))
 end
 
