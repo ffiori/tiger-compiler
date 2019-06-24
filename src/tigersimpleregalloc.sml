@@ -11,18 +11,20 @@ struct
 		val precolored = frame.usable_register_list @ frame.specialregs
 		(* COMPLETAR: Temporarios que se pueden usar (p.ej, el temporario que representa a rax. Diferencia con precolored: el temporario que representa a rbp no se puede usar) *)
 		val asignables = frame.usable_register_list
+		(* base de los registros en memoria *)
+		val regbase = "s11"
 		(* COMPLETAR: movaMem crea una instrucción que mueve un temporario a memoria. movaTemp, de memoria a un temporario.*)
 		fun movaMem(temp, mempos) =
 			let
 				val desp = ppint (~mempos * 8)
 			in
-				OPER {assem="SD `s0, " ^ desp ^"(gp)\n", src=[temp], dst=[], jump=NONE}
+				OPER {assem="SD `s0, " ^ desp ^"("^regbase^")\n", src=[temp], dst=[], jump=NONE}
 			end
 		fun movaTemp(mempos, temp) =
 			let
 				val desp = ppint (~mempos * 8)
 			in
-				OPER {assem="LD `d0, "^desp^"(gp)\n", src=[], dst=[temp], jump=NONE}
+				OPER {assem="LD `d0, "^desp^"("^regbase^")\n", src=[], dst=[temp], jump=NONE}
 			end
 		val temps =
 			let

@@ -45,7 +45,7 @@ val localsGap = ~4          (* bytes *)
 val specialregs = [ra, fp, sp, zero]
 val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
 val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
-val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"]
+val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"] (* TODO: borre s11 para simpleregallog *)
 val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 val usable_register_list = argregs @ callersaves @ calleesaves
 
@@ -142,10 +142,19 @@ fun procEntryExit2 (frame,body) = body @
 
 fun procEntryExit3 (frame: frame, body) = {
     prolog = "# PROCEDURE " ^ #name frame ^ "\n"^
+             ".type " ^ #name frame ^ ", @function\n"^
              ".global " ^ #name frame ^ "\n"^
-             #name frame^":\n",
+             #name frame^":\n"^
+             "addi sp,sp,-16\n"^
+             "sd ra,8(sp)\n"^
+             "sd s0,0(sp)\n"^
+             "addi s0,sp,16\n",
     body = body,
-    epilog = "# END " ^ #name frame ^ "\n\n"
+    epilog = "ld ra,8(sp)\n"^
+             "ld s0,0(sp)\n"^
+             "addi sp,sp,16\n"^
+             "jr ra\n"^
+             "# END " ^ #name frame ^ "\n\n"
 }
 
 end
