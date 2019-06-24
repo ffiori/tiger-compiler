@@ -8,6 +8,7 @@ open tigerinterp
 open tigercodegen
 open tigerflow
 open tigerliveness
+open tigersimpleregalloc
 open BasicIO Nonstdio
 
 fun lexstream(is: instream) =
@@ -67,7 +68,8 @@ fun main(args) =
             let
                 val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
                 val body_code_2 = procEntryExit2(frame,body_code)
-                val (code_with_regs, temp2reg) = tigerregalloc.alloc frame body_code_2 (* TODO temp2reg should be a function or a table to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val (_, temp2reg) = tigerregalloc.alloc frame body_code_2 (* TODO temp2reg should be a function or a table to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val code_with_regs = simpleregalloc frame body_code_2
                 val body_code_3 = procEntryExit3(frame,code_with_regs)
             in 
                 (body_code_3, temp2reg)
@@ -80,7 +82,7 @@ fun main(args) =
         (* TODO: use tigerassem.format function to convert instrs to a string of assembly code *)
 
     in
-        print "Success\n"
+        print "# Success\n"
     end handle Fail s => print("Fail: "^s)
 
 val _ = main(CommandLine.arguments())
