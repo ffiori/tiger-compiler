@@ -224,7 +224,7 @@ fun combine(u,v) =
         val _ = enableMoves(Splayset.singleton String.compare v)  (*Errata*)
         val _ = Splayset.app (fn t => (addEdge(t,u) ; decrementDegree t) ) (adjacent v)
         val _ = if (safeFind(!degree, u, degree_default_value)>=tigerframe.usable_registers) andalso member(!freezeWorklist,u) 
-                then (freezeWorklist:=delete(!freezeWorklist,u) ; spillWorklist := add(!spillWorklist,u) )
+                then (freezeWorklist := delete(!freezeWorklist,u); spillWorklist := add(!spillWorklist,u) )
                 else ()
     
     in
@@ -239,7 +239,7 @@ fun coalesce() =
                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
         val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
-        val _ = worklistMoves:= safeDelete(!worklistMoves,m)
+        val _ = worklistMoves := safeDelete(!worklistMoves,m)
         
         fun bigCondition() =
             let
@@ -277,20 +277,20 @@ fun freezeMoves(u) =
             case m of
                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
-        val v = if (getAlias x = getAlias y) then getAlias x else getAlias y
-        val _ = activeMoves:= safeDelete(!activeMoves,m)
+        val v = if (getAlias y = getAlias u) then getAlias x else getAlias y
+        val _ = activeMoves := safeDelete(!activeMoves,m)
         val _ = frozenMoves := add(!frozenMoves,m)
-        val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso (safeFind(!degree, v, degree_default_value)<tigerframe.usable_registers))
-                then (freezeWorklist:=safeDelete(!freezeWorklist,v) ; simplifyWorklist := add(!simplifyWorklist,v))
+        val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso (safeFind(!degree, v, degree_default_value) < tigerframe.usable_registers))
+                then (freezeWorklist := safeDelete(!freezeWorklist,v); simplifyWorklist := add(!simplifyWorklist,v))
                 else ()
     in
         ()
     end
 
-fun freeze () =
+fun freeze() =
     let
         val u = first_element (!freezeWorklist)
-        val _ = freezeWorklist:= safeDelete(!freezeWorklist,u)
+        val _ = freezeWorklist := safeDelete(!freezeWorklist,u)
         val _ = simplifyWorklist := add(!simplifyWorklist,u)
         val _ = freezeMoves(u)
     in
@@ -301,10 +301,9 @@ fun selectSpill() =
     let
         fun heuristic ls = first_element (!ls) (* TODO: Algo mas inteligente (O NO) *)
         val m = heuristic spillWorklist
-        val _ = spillWorklist:= safeDelete(!spillWorklist,m)
+        val _ = spillWorklist := safeDelete(!spillWorklist,m)
         val _ = simplifyWorklist := add(!simplifyWorklist,m)
         val _ = freezeMoves(m)
-
     in
         ()
     end
@@ -316,7 +315,7 @@ fun assignColors() =
                 val n = pop(!selectStack) (* TODO: pop no borra el elemento, hace "top" en realidad *)
                 val okColors = ref ( addList(empty(String.compare),tigerframe.usable_register_list) )
                 val _ = Splayset.app
-                        (fn w => if  (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
+                        (fn w => if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
                                  then okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
                                  else () )
                         (safeFind(!adjList, n, adjList_default_value))
@@ -340,7 +339,9 @@ fun assignColors() =
         val _ = if (List.null(!selectStack))  
                 then ()
                 else while_body() 
-        val _ = Splayset.app (fn n => color := insert(!color,n,Splaymap.find(!color, getAlias(n)))) (!coalescedNodes)
+        val _ = Splayset.app
+                (fn n => color := insert(!color,n,Splaymap.find(!color, getAlias(n))))
+                (!coalescedNodes)
     in
         ()  
     end
