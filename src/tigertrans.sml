@@ -178,7 +178,7 @@ let
        |alojar ((f,n)::fs) = (MOVE(MEM(BINOP(PLUS,TEMP r,CONST (n*wSz))), unEx f))::(alojar fs)
 in
     Ex (ESEQ(seq ([MOVE(TEMP tsz, CONST ((List.length l)*wSz)),
-                   EXP(externalCall("_malloc",[TEMP tsz])),  (* Alojo espacio para el record *)
+                   EXP(externalCall("_allocRecord",[TEMP tsz])),  (* Alojo espacio para el record *)
                    MOVE(TEMP r, TEMP rv)] @ (alojar l)),
              TEMP r))
 end
