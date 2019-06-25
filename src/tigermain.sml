@@ -77,8 +77,19 @@ fun main(args) =
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
         val functions_code = List.map procesarBody canonProcs
-        val _ = tigerassem.showAssem (List.map (#1) functions_code)
         
+        val out_file = TextIO.openOut "prog.s"
+            handle _ => raise Fail "[tigermain] Problema abriendo prog.s"
+        fun print_asm txt = TextIO.output(out_file, txt)
+
+        val _ = print_asm ".data\n"
+        val _ = List.app (print_asm o tigercodegen.codestring) canonStrings
+        val _ = print_asm ".size outsz, 4096\noutsz: .zero 4096\n"
+
+        val _ = print_asm ".text\n"
+        val _ = tigerassem.mapAssem print_asm (List.map (#1) functions_code)
+       	
+        val _ = TextIO.closeOut out_file
         (* TODO: use tigerassem.format function to convert instrs to a string of assembly code *)
 
     in

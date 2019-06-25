@@ -81,14 +81,14 @@ structure tigerassem = struct
             | MOVE{assem,dst,src} => speak(assem,[dst],[src],nil)
         end
 
-    (* {prolog,body,epilog} list -> unit *)
-    fun showAssem (x: {prolog:string,body:instr list,epilog:string} list) = 
-        List.app showPBE x
-    and showPBE w =
-        (print(#prolog w);
-        showB (#body w);
-        print(#epilog w))
-    and showB b =
-        List.app (fn w => print(format (fn f => f) w)) b
+    (* (string -> unit) -> {prolog,body,epilog} list -> unit *)
+    fun mapAssem f (x: {prolog:string,body:instr list,epilog:string} list) = 
+        List.app (showPBE f) x
+    and showPBE f w =
+        (f (#prolog w);
+        showB f (#body w);
+        f (#epilog w))
+    and showB f b =
+        List.app (fn w => f(format (fn f => f) w)) b
 
 end
