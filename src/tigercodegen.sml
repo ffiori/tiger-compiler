@@ -125,7 +125,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                                  src = munchArgs(args),
                                                  dst = [ra],
                                                  jump = NONE})
-
+              | EXP (TEMP t) => () (* TODO: que significa esto? *)
               | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
               | JUMP (NAME n, l) => emit (OPER{ assem = "J "^n^"\n",
                                                  src = [],
