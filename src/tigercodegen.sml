@@ -6,6 +6,21 @@ structure tigercodegen :> tigercodegen = struct
 
 fun ppint x = tigerpp.ppint x
 
+fun stringLen s =
+    let fun aux[] = 0
+        | aux(#"\\":: #"x"::_::_::t) = 1+aux(t)
+        | aux(_::t) = 1+aux(t)
+    in  aux(explode s) end
+
+fun codestring (lab, str) =
+  let val len = stringLen str
+  in
+    ".size " ^ lab ^ ", " ^ ppint (len + 8) ^ "\n"^
+    lab ^ ":\n"^
+    "\t.8byte " ^ ppint len ^ "\n"^
+    "\t.ascii \"" ^ str ^ "\"\n" (* TODO revisar escape de comillas *)
+  end
+
 fun codegen frame stm = (*se aplica a cada funcion*)
     let val ilist = ref ([]:instr list) (*lista de instrucciones que va a ir mutando*)
         fun emit x = ilist := x::(!ilist) (*!ilist es equivalente a *ilist en C y ilist := a es equivalente a *ilist = a en C*)

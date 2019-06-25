@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
 typedef struct {
-    long length;
+    uint64_t length;
     unsigned char chars[1];
 } string;
 const string consts[256] = {
