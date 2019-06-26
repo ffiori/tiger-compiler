@@ -359,7 +359,7 @@ fun rewriteProgram(frm,body) = (* TODO :) *)
                         let
                             val t = tigertemp.newtemp()
                             val _ = newTemps := add(!newTemps,t)
-                            val offset = case address of 
+                            val offset = case address of  (* Que pasa si offset es un valor muy grande?? *)
                                 tigerframe.InFrame k => k
                                 | _ => raise Fail "rewriteProgram no deberían haber InReg acá\n"
                             val fetch_instr =
@@ -419,7 +419,7 @@ fun rewriteProgram(frm,body) = (* TODO :) *)
         new_body
     end
 
-fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) = 
+fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list) first_call = 
     let
         (* DEBUG
         val _ = print("ASSEM LIST: \n ")
@@ -463,8 +463,15 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         val _ = adjList := mkDict(String.compare)
         
         val _ = alias := mkDict(String.compare)
-        val color : ((tigertemp.temp, string) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
+        val _ = color := mkDict(String.compare) (* mapea temporales a registros posta *)
         
+        val _ = precolored := Splayset.addList((Splayset.empty String.compare), tigerframe.usable_register_list)
+
+        val () = if first_call 
+                 then ()
+                  (* TODO: initial := todos los temporales usados en instrucciones - precolored? *) 
+                 else ()
+
         
         (**************** build() (as in the book) ********************)
         fun processInstruction (instr,fnode) =
@@ -535,7 +542,7 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
             if Splayset.numItems(!spilledNodes) <> 0
             then 
                 let val body = rewriteProgram(frm,body)
-                    val (body,color)  = alloc frm body
+                    val (body,color)  = allocAux frm body false
                 in
                     body
                 end
@@ -545,4 +552,7 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) =
         (answer, !color) (* TODO *)
     end
 
+fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list)  = allocAux frm body true
+
 end
+
