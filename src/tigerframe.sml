@@ -142,17 +142,18 @@ fun procEntryExit2 (frame,body) = body @
 
 fun procEntryExit3 (frame: frame, body) = 
 let val name = #name frame
-    val spOffset = !(#actualLocal frame) + localsGap
-    val save_s0_off = ~spOffset - wSz
-    val save_a0_off = ~spOffset - 2 * wSz
-    val save_ra_off = ~spOffset - 3 * wSz
+    val spOffset = (!(#actualLocal frame) + localsGap)
+    val spOffsetA = spOffset - (16 - (~spOffset) mod 16) mod 16
+    val save_s0_off = ~spOffsetA - wSz
+    val save_a0_off = ~spOffsetA - 2 * wSz
+    val save_ra_off = ~spOffsetA - 3 * wSz
 in {
     prolog = "# PROCEDURE " ^ name ^ "\n"^
              "\t.align 2\n"^
              "\t.type " ^ name ^ ", @function\n"^
              "\t.globl " ^ name ^ "\n"^
              name^":\n"^
-             "\taddi sp, sp, " ^ ppint spOffset ^ "\n"^
+             "\taddi sp, sp, " ^ ppint spOffsetA ^ "\n"^
              "\tsd s0, " ^ ppint save_s0_off ^ "(sp)\n"^
              "\tsd a0, " ^ ppint save_a0_off ^ "(sp)\n"^
              "\tsd ra, " ^ ppint save_ra_off ^ "(sp)\n"^
@@ -160,7 +161,7 @@ in {
     body = body,
     epilog = "\tld ra, " ^ ppint save_ra_off ^ "(sp)\n"^
              "\tld s0, " ^ ppint save_s0_off ^ "(sp)\n"^
-             "\taddi sp, sp, " ^ ppint (~spOffset) ^ "\n"^
+             "\taddi sp, sp, " ^ ppint (~spOffsetA) ^ "\n"^
              "\tjr ra\n"^
              "# END " ^ name ^ "\n\n"
     }
