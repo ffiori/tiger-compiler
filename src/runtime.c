@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+void printInt(uint64_t x) {
+	printf("INT: %ld\n", x);
+}
+
 typedef struct {
     uint64_t length;
     unsigned char chars[1];
@@ -97,41 +101,41 @@ const string consts[256] = {
 };
 string empty = {0, ""};
 
-long *_initArray(long size, long init)
+uint64_t *_initArray(uint64_t size, uint64_t init)
 {
     int i;
-    long *a = malloc(size * sizeof(long) + 1);
+    uint64_t *a = malloc((size + 1) * sizeof(*a));
 	a[0] = size;
     for (i = 1; i <= size; i++)
 		a[i] = init;
     return a+1;
 }
-void _checkIndexArray(long *a, long i)
+void _checkIndexArray(uint64_t *a, uint64_t i)
 {
-	if(i<0 || i>a[-1]) {
+	if(i<0 || i>=a[-1]) {
 		fprintf(stderr, "indice %ld excedido!\n", i);
 		exit(-1);
 	}
 }
-long *_allocRecord(long ctos, ...)
+uint64_t *_allocRecord(uint64_t ctos, ...)
 {
     int i;
-    long *p, *a;
+    uint64_t *p, *a;
 	va_list va;
-    p = a = malloc(ctos*sizeof(long));
+    p = a = malloc(ctos * sizeof(*p));
 	va_start(va, ctos);
     for (i = 0; i < ctos; i ++)
-		*p++ = va_arg(va, long);
+		*p++ = va_arg(va, uint64_t);
     return a;
 }
-void _checkNil(long* r)
+void _checkNil(uint64_t* r)
 {
 	if(r==0) {
 		fprintf(stderr, "Nil!\n");
 		exit(-1);
 	}
 }
-long _stringCompare(string *s, string *t)
+uint64_t _stringCompare(string *s, string *t)
 {
     int i;
     if(s == t)
@@ -152,14 +156,14 @@ void flush()
 {
     fflush(stdout);
 }
-long ord(string *s)
+uint64_t ord(string *s)
 {
     if (s->length == 0)
 		return -1;
     else
 		return s->chars[0];
 }
-string *chr(long i)
+string *chr(uint64_t i)
 {
     if (i < 0 || i >= 256) {
 		printf("chr(%ld) out of range\n", i);
@@ -167,11 +171,11 @@ string *chr(long i)
     }
     return (string*)(consts + i);
 }
-long size(string *s)
+uint64_t size(string *s)
 {
     return s->length;
 }
-string *substring(string *s, long first, long n)
+string *substring(string *s, uint64_t first, uint64_t n)
 {
     if (first < 0 || first + n > s->length) {
 		printf("substring([%ld],%ld,%ld) out of range\n", s->length, first, n);
@@ -180,7 +184,7 @@ string *substring(string *s, long first, long n)
     if (n == 1)
 		return (string*)(consts + s->chars[first]);
     {
-		string *t = malloc(sizeof(long) + n);
+		string *t = malloc(sizeof(uint64_t) + n);
 		int i;
 		t->length = n;
 		for (i = 0; i < n; i++)
@@ -196,7 +200,7 @@ string *concat(string *a, string *b)
 		return a;
     else {
 		int i, n = a->length + b->length;
-		string *t = malloc(sizeof(long) + n);
+		string *t = malloc(sizeof(uint64_t) + n);
 		t->length = n;
 		for (i = 0; i < a->length; i++)
 		    t->chars[i] = a->chars[i];
@@ -205,7 +209,7 @@ string *concat(string *a, string *b)
 		return t;
     }
 }
-long not(long i)
+uint64_t not(uint64_t i)
 {
     return !i;
 }
@@ -218,7 +222,7 @@ string *getstr()
 		return (string*)(consts + i);
 }
 
-int _tigermain(long long);
+uint64_t _tigermain(uint64_t);
 
 int main()
 {
@@ -229,5 +233,7 @@ int main()
 		consts[i].chars[0] = i;
     }
 	*/
-    return _tigermain(0 /* static link!? */ );
+    i = _tigermain(0 /* static link!? */ );
+    _Exit(i);
+    return EXIT_FAILURE;
 }
