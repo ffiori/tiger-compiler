@@ -84,9 +84,8 @@ fun main(args) =
 
         val _ = print_asm ".data\n"
         val _ = List.app (print_asm o tigercodegen.codestring) canonStrings
-        val _ = print_asm ".size outsz, 4096\noutsz: .zero 4096\n"
 
-        val _ = print_asm ".text\n"
+        val _ = print_asm "\n.text\n"
         val _ = tigerassem.mapAssem print_asm (List.map (#1) functions_code)
        	
         val _ = TextIO.closeOut out_file

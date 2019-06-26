@@ -1,18 +1,17 @@
 (*
-    Frames para el 80386 (sin displays ni registers).
+    Frames para riscv (sin registers).
 
-        |    argn    |  fp+4*(n+1)
+0xffff  
+        |    ...     |  s0+8  | 40(sp)
+        --------------  s0
+        |   fp ant   |  s0    | 32(sp)
+        | stat link  |  s0-8  | 24(sp)
+        |   return   |  s0-16 | 16(sp)
+        |  local 1   |  s0-24 |  8(sp)
+        |  local 2   |  sp
         |    ...     |
-        |    arg2    |  fp+16
-        |    arg1    |  fp+12
-        |   fp level |  fp+8
-        |  retorno   |  fp+4
-        |   fp ant   |  fp
-        --------------  fp
-        |   local1   |  fp-4
-        |   local2   |  fp-8
-        |    ...     |
-        |   localn   |  fp-4*n
+0x0
+
 *)
 
 structure tigerframe :> tigerframe = struct
@@ -26,6 +25,7 @@ datatype access = InFrame of int | InReg of tigertemp.label
 
 (* TODO: PAG 208 *)
 
+fun ppint x = tigerpp.ppint x
 
 val fp = "s0"               (* frame pointer *)
 val sp = "sp"               (* stack pointer *)
@@ -35,17 +35,17 @@ val zero = "x0"
 val wSz = 8                 (* word size in bytes *)
 val log2WSz = 3             (* base two logarithm of word size in bytes *)
 val fpPrev = 0              (* offset (bytes) *)
-val fpPrevLev = 8           (* offset (bytes) *)
+val fpPrevLev = ~wSz        (* offset (bytes) *)
 val argsInicial = 0         (* words *)
 val argsOffInicial = 0      (* words *)
 val argsGap = wSz           (* bytes *)
 val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
-val localsGap = ~4          (* bytes *)
+val localsGap = ~3*wSz      (* bytes *)
 val specialregs = [ra, fp, sp, zero]
 val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
 val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
-val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"] (* TODO: borre s11 para simpleregallog *)
+val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"] (* TODO: borre s9-11 para simpleregallog *)
 val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 val usable_register_list = argregs @ callersaves @ calleesaves
 
@@ -108,7 +108,7 @@ fun allocLocal (f: frame) escape =
     case escape of
         true =>
             let val ret = InFrame(!(#actualLocal f)+localsGap)
-            in  #actualLocal f:=(!(#actualLocal f)-1); ret end
+            in  #actualLocal f:=(!(#actualLocal f)-wSz); ret end
         | false => InReg(tigertemp.newtemp())
 
 fun exp (InFrame k) fp = MEM(BINOP(PLUS, fp, CONST k))
@@ -140,21 +140,30 @@ fun procEntryExit2 (frame,body) = body @
         dst=[],
         jump=SOME [] }]
 
-fun procEntryExit3 (frame: frame, body) = {
-    prolog = "# PROCEDURE " ^ #name frame ^ "\n"^
-             ".type " ^ #name frame ^ ", @function\n"^
-             ".global " ^ #name frame ^ "\n"^
-             #name frame^":\n"^
-             "addi sp,sp,-16\n"^
-             "sd ra,8(sp)\n"^
-             "sd s0,0(sp)\n"^
-             "addi s0,sp,16\n",
+fun procEntryExit3 (frame: frame, body) = 
+let val name = #name frame
+    val spOffset = !(#actualLocal frame) + localsGap
+    val save_s0_off = ~spOffset - wSz
+    val save_a0_off = ~spOffset - 2 * wSz
+    val save_ra_off = ~spOffset - 3 * wSz
+in {
+    prolog = "# PROCEDURE " ^ name ^ "\n"^
+             "\t.align 2\n"^
+             "\t.type " ^ name ^ ", @function\n"^
+             "\t.globl " ^ name ^ "\n"^
+             name^":\n"^
+             "\taddi sp, sp, " ^ ppint spOffset ^ "\n"^
+             "\tsd s0, " ^ ppint save_s0_off ^ "(sp)\n"^
+             "\tsd a0, " ^ ppint save_a0_off ^ "(sp)\n"^
+             "\tsd ra, " ^ ppint save_ra_off ^ "(sp)\n"^
+             "\taddi s0, sp, " ^ ppint save_s0_off ^ "\n",
     body = body,
-    epilog = "ld ra,8(sp)\n"^
-             "ld s0,0(sp)\n"^
-             "addi sp,sp,16\n"^
-             "jr ra\n"^
-             "# END " ^ #name frame ^ "\n\n"
-}
+    epilog = "\tld ra, " ^ ppint save_ra_off ^ "(sp)\n"^
+             "\tld s0, " ^ ppint save_s0_off ^ "(sp)\n"^
+             "\taddi sp, sp, " ^ ppint (~spOffset) ^ "\n"^
+             "\tjr ra\n"^
+             "# END " ^ name ^ "\n\n"
+    }
+end
 
 end

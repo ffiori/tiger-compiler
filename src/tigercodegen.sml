@@ -17,7 +17,7 @@ fun codestring (lab, str) =
   in
     ".size " ^ lab ^ ", " ^ ppint (len + 8) ^ "\n"^
     lab ^ ":\n"^
-    "\t.8byte " ^ ppint len ^ "\n"^
+    "\t.dword " ^ ppint len ^ "\n"^
     "\t.ascii \"" ^ str ^ "\"\n" (* TODO revisar escape de comillas *)
   end
 
@@ -123,7 +123,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
               (* CHECK: call podria pisar t1 *)
               | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "CALL "^n^"\n", (* page 204. CHECK. *)
                                                  src = munchArgs(args),
-                                                 dst = [ra],
+                                                 dst = callersaves @ argregs,
                                                  jump = NONE})
               | EXP (TEMP t) => () (* TODO: que significa esto? *)
               | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
