@@ -40,7 +40,9 @@ struct
 				Splayset.listItems(Splayset.difference(s, precoloredSet))
 			end
 
-		val accesses = map (fn T => let val frame.InFrame n = frame.allocLocal frm true in (T, n) end) temps
+        fun safeGetFrameAddress (frame.InFrame n) = n
+            | safeGetFrameAddress _ = raise Fail "[safeGetFrameAddress] allocLocal not generating an InFrame. Shouldn't happen.\n"
+		val accesses = map (fn T => (T, safeGetFrameAddress (frame.allocLocal frm true))) temps
 		fun getFramePos T =
 			let
 				fun gfp T [] = raise Fail("Temporario no encontrado: "^T)

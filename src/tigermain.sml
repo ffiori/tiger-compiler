@@ -25,7 +25,8 @@ fun main(args) =
         val (canon, l4)     = arg(l3, "-canon") 
         val (code, l5)      = arg(l4, "-code") 
         val (flow, l6)      = arg(l5, "-flow") 
-        val (inter, l7)     = arg(l6, "-inter") 
+        val (inter, l7)     = arg(l6, "-inter")
+        val (simplecolor, l8)   = arg(l7, "-simple")
         val entrada =
             case l7 of
             [n] => ((open_in n)
@@ -68,8 +69,10 @@ fun main(args) =
             let
                 val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
                 val body_code_2 = procEntryExit2(frame,body_code)
-                val (_, temp2reg) = tigerregalloc.alloc frame body_code_2 (* TODO temp2reg should be a function or a table to map temporary registers to actual registers, useful for formatting function to write final asm file *)
-                val code_with_regs = simpleregalloc frame body_code_2
+                
+                val (coalesced_code, temp2reg) = tigerregalloc.alloc frame body_code_2 (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val code_with_regs = simpleregalloc frame body_code_2 (*DEBUGGING*)
+                
                 val body_code_3 = procEntryExit3(frame,code_with_regs)
             in 
                 (body_code_3, temp2reg)
