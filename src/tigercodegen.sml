@@ -188,7 +188,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       src=[munchExp e1], 
                                       jump=NONE}))
             else safeMunchExp e
-          | (BINOP (b, e1, e2)) => safeMunchExp e
+          | (BINOP _) => safeMunchExp e
 
           (*Para acceder a memoria tenemos que usar "LW rd,rs1,imm"  <=> rd <- mem[rs1 + imm]*)
           | (MEM (CONST i)) =>
@@ -212,7 +212,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                       src=[munchExp e2], 
                                       jump=NONE}))
             else safeMunchExp e
-          | (MEM e) => safeMunchExp e
+          | (MEM _) => safeMunchExp e
           | (NAME n) => 
             result (fn r => emit(OPER{assem="LA `d0, "^n^"\n",
                                       dst=[r], 
@@ -237,7 +237,12 @@ fun codegen frame stm = (*se aplica a cada funcion*)
            know that something happens to them here
            *)
 
-        and munchArgs(args) = List.map munchExp args (* TO DO *)
+        and munchArgs(args) = let
+          val argregs = List.map TEMP tigerframe.argregs
+          val expreg = ListPair.zip (argregs, args) (* TODO: cuando no entran *)
+          val _ = List.app (munchStm o tigertree.MOVE) expreg
+          val regs = List.map (#1) expreg
+        in List.take (tigerframe.argregs, (List.length regs)) end
             
     in
         munchStm stm ; rev(!ilist)
