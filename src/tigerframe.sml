@@ -36,9 +36,6 @@ val wSz = 8                 (* word size in bytes *)
 val log2WSz = 3             (* base two logarithm of word size in bytes *)
 val fpPrev = 0              (* offset (bytes) *)
 val fpPrevLev = ~wSz        (* offset (bytes) *)
-val argsInicial = 0         (* words *)
-val argsOffInicial = 0      (* words *)
-val argsGap = wSz           (* bytes *)
 val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
 val localsGap = ~3*wSz      (* bytes *)
@@ -55,7 +52,6 @@ type frame = {
     name: string,
     formals: bool list,
     locals: bool list,
-    actualArg: int ref,
     actualLocal: int ref,
     actualReg: int ref,
     actualArgsLocation : (access list) ref
@@ -70,7 +66,6 @@ fun newFrame{name, formals} = {
     name=name,
     formals=formals,
     locals=[],
-    actualArg=ref argsInicial,
     actualLocal=ref localsInicial,
     actualReg=ref regInicial,
     actualArgsLocation = ref accessListInicial
@@ -83,26 +78,6 @@ fun string(l, s) = l^tigertemp.makeString(s)^"\n"
 fun formals({formals=f, actualArgsLocation = a,...}: frame) = !a 
 
 fun maxRegFrame(f: frame) = !(#actualReg f)
-
-fun allocArg (f: frame) escape = 
-    case escape of
-        true =>
-            let
-                val ret = (!(#actualArg f)+argsOffInicial)*wSz
-                val _ = #actualArg f := !(#actualArg f)+1
-                val a = #actualArgsLocation f
-                val _ = a := (!a) @ [InFrame ret]              
-            in
-                InFrame ret
-            end
-        | false =>
-            let
-                val a = #actualArgsLocation f
-                val temp = tigertemp.newtemp()
-                val _ = a := (!a) @ [InReg temp]  
-            in 
-                InReg temp
-            end
         
 fun allocLocal (f: frame) escape = 
     case escape of
@@ -110,6 +85,13 @@ fun allocLocal (f: frame) escape =
             let val ret = InFrame(!(#actualLocal f)+localsGap)
             in  #actualLocal f:=(!(#actualLocal f)-wSz); ret end
         | false => InReg(tigertemp.newtemp())
+
+fun allocArg (f: frame) escape =
+    let
+        val r = allocLocal f escape
+        val a = #actualArgsLocation f
+        val _ = a := (!a) @ [r]
+    in r end
 
 fun exp (InFrame k) fp = MEM(BINOP(PLUS, fp, CONST k))
     | exp (InReg l) fp = TEMP l
