@@ -9,3 +9,5 @@ tiger
 *.uo
 errlist
 *.o
+prog.s
+a.out
