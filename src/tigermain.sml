@@ -27,12 +27,14 @@ fun main(args) =
         val (flow, l6)      = arg(l5, "-flow") 
         val (inter, l7)     = arg(l6, "-inter")
         val (simplecolor, l8)   = arg(l7, "-simple")
+        val (colordebug, l9)   = arg(l8, "-colordebug")
+
         val entrada =
-            case l7 of
+            case l9 of
             [n] => ((open_in n)
                     handle _ => raise Fail (n^" no existe!"))
             | [] => std_in
-            | _ => raise Fail "opcio'n dsconocida!"
+            | _ => raise Fail "opcion dsconocida!\n"
 
         (* 1 - APLICAR LEXER Y PARSER *)
         val lexbuf = lexstream entrada
@@ -80,7 +82,18 @@ fun main(args) =
                 val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
                 val body_code_2 = procEntryExit2(frame,body_code)
                 
-                val (coalesced_code, temp2reg) = tigerregalloc.alloc frame body_code_2 (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val (coalesced_code, temp2reg) = tigerregalloc.alloc frame body_code_2 colordebug (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                
+                val _ = if (colordebug) 
+                        then
+                            let val _ = print("COLOREO FINAL \n")
+                                val _ =
+                                Splaymap.app
+                                (fn (temp,reg) => (print(temp^": "^reg^"\n")))
+                                (temp2reg)
+                            in () end
+                        else ()
+
                 val code_with_regs = simpleregalloc frame body_code_2 (*DEBUGGING*)
                 
                 val body_code_3 = procEntryExit3(frame,code_with_regs)

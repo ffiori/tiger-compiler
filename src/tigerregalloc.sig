@@ -5,5 +5,5 @@ sig
 *)
 	type allocation = (tigertemp.temp, tigerframe.register) Splaymap.dict
 	
-	val alloc : tigerframe.frame -> tigerassem.instr list -> tigerassem.instr list * allocation
+	val alloc : tigerframe.frame -> tigerassem.instr list -> bool -> tigerassem.instr list * allocation
 end

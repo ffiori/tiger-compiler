@@ -89,9 +89,11 @@ struct
             | get_src _ = raise Fail "[get_src] Should not happen. Is there any LABEL l remaining?"
           val use = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.map get_src nodes_not_labels)
 
-          fun is_move (MOVE _,n)  = (n,true)
-            | is_move (_,n)       = (n,false)
-          val ismove = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.map is_move nodes_not_labels)
+          fun is_move (MOVE _,n)  = SOME (n,true)
+            | is_move (_,n)       = NONE
+
+          
+          val ismove = tabInserList(tigertab.tabNuevaEq tigergraph.eq, List.mapPartial is_move nodes_not_labels)
 
       in
           (FGRAPH{control = control,
