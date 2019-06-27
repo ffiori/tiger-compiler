@@ -97,8 +97,9 @@ fun main(args) =
                 val code_with_regs = simpleregalloc frame body_code_2 (*DEBUGGING*)
                 
                 val body_code_3 = procEntryExit3(frame,code_with_regs)
+                fun temp2regFun t = Splaymap.find(temp2reg,t)
             in 
-                (body_code_3, temp2reg)
+                ( body_code_3, if simplecolor then (fn x=>x) else temp2regFun )
             end
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
@@ -112,11 +113,9 @@ fun main(args) =
         val _ = List.app (print_asm o tigercodegen.codestring) canonStrings
 
         val _ = print_asm "\n.text\n"
-        val _ = tigerassem.mapAssem print_asm (List.map (#1) functions_code)
+        val _ = tigerassem.mapAssem print_asm functions_code
        	
         val _ = TextIO.closeOut out_file
-        (* TODO: use tigerassem.format function to convert instrs to a string of assembly code *)
-
     in
         print "# Success\n"
     end handle Fail s => print("Fail: "^s)

@@ -121,7 +121,7 @@ end
 fun procEntryExit2 (frame,body) = body @
     [tigerassem.OPER {
         assem="",
-        src=specialregs@calleesaves,  (*COLORTEST: Make this []*)
+        src=ra::calleesaves,  (*COLORTEST: Make this []*)
         dst=[],
         jump=SOME [] }]
 

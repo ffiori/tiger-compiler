@@ -82,14 +82,14 @@ structure tigerassem = struct
             | MOVE{assem,dst,src} => speak(assem,[dst],[src],nil)
         end
 
-    (* (string -> unit) -> {prolog,body,epilog} list -> unit *)
-    fun mapAssem f (x: {prolog:string,body:instr list,epilog:string} list) = 
+    (* (string -> unit) -> ({prolog,body,epilog}, tigerregalloc.allocation) list -> unit *)
+    fun mapAssem f (x : ({prolog:string,body:instr list,epilog:string} * (tigertemp.temp -> string)) list) = 
         List.app (showPBE f) x
-    and showPBE f w =
+    and showPBE f (w,temp2reg) =
         (f (#prolog w);
-        showB f (#body w);
+        showB f temp2reg (#body w);
         f (#epilog w))
-    and showB f b =
-        List.app (fn w => f(format (fn f => f) w)) b
+    and showB f temp2reg b =
+        List.app (fn w => f(format temp2reg w)) b
 
 end
