@@ -15,7 +15,7 @@ sig
 
     (* Returns an interference graph and a table mapping each flowgraph node
      * to the set of temporaries that are live-out at that node. *)
-    val interferenceGraph :
+    val calculateLiveout :
       tigerflow.flowgraph -> tigergraph.node -> tigertemp.temp list
 
     (* For debugging *)

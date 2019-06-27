@@ -71,6 +71,13 @@ fun main(args) =
                 val body_code_2 = procEntryExit2(frame,body_code)
                 
                 val (coalesced_code, temp2reg) = tigerregalloc.alloc frame body_code_2 (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                
+                val _ = print("QUEPASAACA\n")
+                val _ =
+                Splaymap.app
+                (fn (temp,reg) => (print(temp^": "^reg^"\n")))
+                (temp2reg)
+
                 val code_with_regs = simpleregalloc frame body_code_2 (*DEBUGGING*)
                 
                 val body_code_3 = procEntryExit3(frame,code_with_regs)

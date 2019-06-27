@@ -103,7 +103,7 @@ struct
             else computeLiveness (tigerflow.FGRAPH flow_graph)
         end
     
-    fun interferenceGraph flow_graph = 
+    fun calculateLiveout flow_graph = 
         let
             val _ = livein := tigertab.tabNuevaEq(tigergraph.eq)
             val _ = liveout := tigertab.tabNuevaEq(tigergraph.eq)
@@ -112,7 +112,7 @@ struct
             fun getTempList liveout_now node =
                 case tabBusca(node,liveout_now) of
                     SOME tab => List.map (#1) (tabAList tab)
-                    | _ => raise Fail "[getTempList] node not found! Maybe while using liveout (return value of interferenceGraph).\n"
+                    | _ => raise Fail "[getTempList] node not found! Maybe while using liveout (return value of calculateLiveout).\n"
             val liveout_answer = (!liveout) (*WARNING liveout puede no copiarse acá? y pisarse cuando se llame de nuevo? *)
         in
             getTempList liveout_answer

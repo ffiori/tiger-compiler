@@ -46,8 +46,8 @@ val specialregs = [ra, fp, sp, zero]
 val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
 val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
 val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"] (* TODO: borre s9-11 para simpleregallog *)
-val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
-val usable_register_list = argregs @ callersaves @ calleesaves
+val usable_registers = 2   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
+val usable_register_list = List.take(argregs @ callersaves @ calleesaves,usable_registers)
 
 val accessListInicial = [InFrame fpPrevLev]
 
@@ -130,13 +130,13 @@ fun procEntryExit1 (frame:frame,body) = let
     val restoreCS = List.map (MOVE o (fn (t, r) => (r, t))) CStemps
     val moveArgs = List.map MOVE (ListPair.zip (argsExps, argsTemps))
 in
-    seqStm (saveCS @ moveArgs @ [body] @ restoreCS)
+    body(*seqStm (saveCS @ moveArgs @ [body] @ restoreCS)*)
 end
 
 fun procEntryExit2 (frame,body) = body @
     [tigerassem.OPER {
         assem="",
-        src=specialregs@calleesaves,
+        src=[],
         dst=[],
         jump=SOME [] }]
 
