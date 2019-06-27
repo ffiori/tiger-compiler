@@ -37,22 +37,25 @@ val adjList_default_value = empty(String.compare)
 val degree : ((tigertemp.temp, int) dict) ref = ref (mkDict(String.compare))
 val degree_default_value = 0
 
+val debug : bool ref = ref (false)
+
 fun printIgraphList() =
     let
-        val _ = print("Interference graph - Adjacency list model\n\n")
+        val _ = print("\n[Coloreo] INTERFERENCE GRAPH - Adjacency list model\n")
         fun printNeighbors(neighbors) =
             app
             (fn n => print(n^" "))
             neighbors
+            
         val _ =
             Splaymap.app
             (fn (node,neighbors) => (print(node^": "); printNeighbors(neighbors); print("\n")))
-            (!adjList)
+            (!adjList) 
     in print("\n") end
     
 fun printIgraphEdges() =
     let
-        val _ = print("Interference graph - Adjacency set model (set of edges)\n\n")
+        val _ = print("\n[Coloreo] INTERFERENCE GRAPH - Adjacency set model (set of edges)\n")
         fun printNeighbors(neighbors) =
             app
             (fn n => print(n^" "))
@@ -63,7 +66,8 @@ fun printIgraphEdges() =
             (!adjSet)
     in print("\n") end
 
-fun printIgraph() = (printIgraphList(); printIgraphEdges())
+fun printIgraph() = printIgraphList() (*; printIgraphEdges() *)
+
 (********************** End Interference Graph ***********************)
 val precolored : ((tigertemp.temp) set) ref = ref (Splayset.addList((Splayset.empty String.compare), tigerframe.usable_register_list) ) (* It should never be changed*)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) 
@@ -176,7 +180,7 @@ fun decrementDegree node =
 
 fun simplify() =
     let val n = first_element(!simplifyWorklist)
-        val _ = print("Simplify.. Node "^n^"has been removed\n")
+        val _ = if !debug then print("Simplify.. Node "^n^"has been removed\n") else ()
         val _ = simplifyWorklist := safeDelete(!simplifyWorklist, n)
         val _ = selectStack:= push(n, !selectStack)
         val _ = Splayset.app decrementDegree (adjacent(n))
@@ -239,7 +243,7 @@ fun coalesce() =
                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
         val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
-        val _ = print("Coalescing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n")
+        val _ = if !debug then print("Coalescing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
         val _ = worklistMoves := safeDelete(!worklistMoves,m)
         
         fun bigCondition() =
@@ -277,7 +281,7 @@ fun freezeMoves(u) =
                                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
                 val v = if (getAlias y = getAlias u) then getAlias x else getAlias y
-                val _ = print("Freezing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n")
+                val _ = if !debug then  print("Freezing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
                 val _ = activeMoves := safeDelete(!activeMoves,m)
                 val _ = frozenMoves := add(!frozenMoves,m)
                 val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso (safeFind(!degree, v, degree_default_value) < tigerframe.usable_registers))
@@ -294,6 +298,7 @@ fun freezeMoves(u) =
 
 fun freeze() =
     let
+        val _ = if !debug then  print("Freeze invoked ...") else ()
         val u = first_element (!freezeWorklist)
         val _ = freezeWorklist := safeDelete(!freezeWorklist,u)
         val _ = simplifyWorklist := add(!simplifyWorklist,u)
@@ -306,7 +311,7 @@ fun selectSpill() =
     let
         fun heuristic ls = first_element (!ls) (* TODO: Algo mas inteligente (O NO) *)
         val m = heuristic spillWorklist
-        val _ = print("Spilling node "^m^"\n")
+        val _ = if !debug then  print("Spilling node "^m^"\n") else ()
         val _ = spillWorklist := safeDelete(!spillWorklist,m)
         val _ = simplifyWorklist := add(!simplifyWorklist,m)
         val _ = freezeMoves(m)
@@ -317,28 +322,33 @@ fun selectSpill() =
 
 fun assignColors() = 
     let
-        val _ = print("Assigning colors...\n")
+        val _ = if !debug then  print("[Coloreo]ASSIGNING COLORS...\n") else ()
         fun while_body() = 
             if (List.length(!selectStack)>0) 
             then
                 let
                     val n = top(!selectStack)
-                    val _ = print("Picking a color for node "^n^"...\n")
                     val _ = selectStack := pop(!selectStack)
                     val okColors = ref ( addList(empty(String.compare),tigerframe.usable_register_list) )
                     val _ = Splayset.app
                             (fn w => if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
-                                    then (print("It has a neighbour with color "^Splaymap.find(!color, getAlias(w))^"\n");okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w))))
+                                    then okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
                                     else () )
                             (safeFind(!adjList, n, adjList_default_value))
 
                     val _ = if (Splayset.isEmpty(!okColors))
-                            then (print("It turned out to be an actual spill :( \n");spilledNodes := add(!spilledNodes,n))
+                            then (
+                                let
+                                    val _ = if !debug then print(":( node "^n^" turned out to be an actual spill  \n") else ()
+                                    val _ = spilledNodes := add(!spilledNodes,n)
+                                in
+                                    ()
+                                end)
                             else (
                                 let
                                     val _ = coloredNodes := add(!coloredNodes,n)
                                     val c = first_element(!okColors)
-                                    val _ = print("Successfully assigned color "^c^"...\n")
+                                    val _ = if !debug then  print("node "^n^" successfully assigned color "^c^"...\n") else ()
                                     val _ = color := insert(!color,n,c)
                                 in 
                                     ()
@@ -352,16 +362,20 @@ fun assignColors() =
 
         val _ = while_body() 
 
+
         val _ = Splayset.app
-                (fn n => color := insert(!color,n,Splaymap.find(!color, getAlias(n))))
+                (fn n => if member(!precolored,getAlias(n)) 
+                         then color := insert(!color,n,getAlias(n))
+                         else color := insert(!color,n,Splaymap.find(!color, getAlias(n))))
                 (!coalescedNodes)
+        
     in
         ()  
     end
 
 fun rewriteProgram(frm,body) = 
     let
-        val _ = print("Rewriting program...\n")
+        val _ = if !debug then print("\n[Coloreo] Rewriting program...\n") else ()
         val newTemps = ref(Splayset.empty(String.compare))
         
         (* devuelve lista de instr correspondientes a fetchear y storear el valor que estaba en el temporal node en memoria. *)
@@ -415,9 +429,9 @@ fun rewriteProgram(frm,body) =
         fun replaceTemp(node,body) =
             let
                 val address = tigerframe.allocLocal frm true 
-                val _ = print("Old body has size "^Int.toString(List.length(body))^"\n")
+                val _ = if !debug then print("Old body has size "^Int.toString(List.length(body))^"\n") else ()
                 val body' = List.concat(List.map (processInstr node address) body)
-                val _ = print("New body has size "^Int.toString(List.length(body'))^"\n")
+                val _ = if !debug then print("New body has size "^Int.toString(List.length(body'))^"\n") else ()
             in body' end
     
         val new_body =
@@ -428,9 +442,9 @@ fun rewriteProgram(frm,body) =
         
         val _ = spilledNodes := empty(String.compare)
         val _ = initial := union(!coloredNodes, union(!coalescedNodes,!newTemps))
-        val _ = print("NEXT INITIAL SET IS \n")
-        val _ = Splayset.app (fn n => print(n^" ")) (!initial)
-        val _ = print("\n")
+        val _ = if !debug then print("Next initial set is: ") else ()
+        val _ = if !debug then  Splayset.app (fn n => print(n^" ")) (!initial) else ()
+        val _ = if !debug then  print("\n") else ()
         val _ = coloredNodes := empty(String.compare)
         val _ = coalescedNodes := empty(String.compare)
     in
@@ -439,6 +453,7 @@ fun rewriteProgram(frm,body) =
 
 fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  = 
     let
+
         (* Declare and initialize  *)
 
         val _ = simplifyWorklist := empty(String.compare)
@@ -464,19 +479,23 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
         
         val _ = alias := mkDict(String.compare)
         val _ = color := mkDict(String.compare) (* mapea temporales a registros posta *)
-    
+        val _ = degree:= mkDict(String.compare)
         (* Calculate flow graph and then do liveness analysis *)
 
-        val _ = print("ASSEM LIST: \n ")
-        val _ = List.app (fn w => print(tigerassem.format (fn f => f) w)) body
+        val _ = if !debug then  (print("\n*******************************************************************************\n");
+                                 print("[Coloreo] Welcome to a new iteration \n");
+                                 print("[Coloreo] INPUT ASSEM PROGRAM: \n ")) else ()
+        val _ = if !debug then  List.app (fn w => print(tigerassem.format (fn f => f) w)) body else ()
         
         val (flow_graph, fnode_list) = tigerflow.instrs2graph body
         val tigerflow.FGRAPH {def=def,use=use,ismove=ismove,control=control} = flow_graph
 
         
-        val _ = print("FLOW GRAPH: \n ")
-        val _ = tigerflow.print_graph(control)
-        
+        val _ = if !debug then  print("\n[Coloreo] CALCULATED FLOW GRAPH: \n ") else ()
+        val _ = if !debug then tigerflow.print_graph(control) else ()
+        val _ = if !debug then  print("move related:") else ()
+        val _ = if !debug then  (List.app (fn (n,b) => print(tigergraph.nodename(n)^" ")) (tigertab.tabAList(ismove))) else ()
+        val _ = if !debug then  print("\n") else ()
 
         val liveout : tigergraph.node -> tigertemp.temp list =
             tigerliveness.calculateLiveout flow_graph
@@ -510,37 +529,39 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
                         in worklistMoves := add(!worklistMoves,instr) end
                     else ()
                 
-(*
+
                 val _ = live := union(!live,!def_set)
-*)
+
                 val _ = Splayset.app
                         (fn d => Splayset.app (fn l => addEdge(l,d)) (!live))
                         (!def_set)
-(*
-                val _ = live := union(!use_set, difference(!live,!def_set))
-*)
-            in () end
-        
-        val _ = List.app processInstruction ((List.rev o ListPair.zip) (body, fnode_list))
 
-        val _ = printIgraph() (* DEBUGGING *)
+            in () end
+
+        fun  filterLabel (tigerassem.LABEL _) = NONE
+            |filterLabel (inst) = SOME inst
+
+        val _ = List.app processInstruction ((List.rev o ListPair.zip) (List.mapPartial filterLabel body, fnode_list))
+
+        val _ = if !debug then printIgraph() else ()
 
         (************************ build() end *************************)
         
         val _ = makeWorklist()
-        
+        val _ = if !debug then print("\n[Coloreo] STARTING SIMPLIFY-COALESCE-FREEZE-SPILL LOOP... \n\n") else ()
+
         fun loop() =
             let
-                val _ = print("looping... \n")
+                val _ = if !debug then print("Loop iteration... ") else ()
                 val _ =
                     if Splayset.numItems(!simplifyWorklist) <> 0
                     then simplify()
                     else if Splayset.numItems(!worklistMoves) <> 0
-                    then coalesce() (*TODO*)
+                    then coalesce() 
                     else if Splayset.numItems(!freezeWorklist) <> 0
-                    then freeze() (*TODO*)
+                    then freeze() 
                     else if Splayset.numItems(!spillWorklist) <> 0
-                    then selectSpill() (*TODO*)
+                    then selectSpill() 
                     else ()
             in
                 if  Splayset.numItems(!simplifyWorklist) = 0 andalso
@@ -552,12 +573,12 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
             end
         
         val _ = loop()
-        val _ = print("LOOP finished\n")
+        val _ = if !debug then print("Loop finished\n\n") else ()
         val _ = assignColors()
         val answer =
             if Splayset.numItems(!spilledNodes) <> 0
             then 
-                let val _ =  print("Poor guy... your program has to be rewritten \n")
+                let val _ = if !debug then  print("[Coloreo] Your program has to be rewritten :( \n\n") else ()
                     val body = rewriteProgram(frm,body)
                     val body = allocAux frm body 
                 in
@@ -569,8 +590,9 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
     end
 
 
-fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list)  = 
+fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) debug_flag = 
     let 
+        val _ = debug := debug_flag
         fun   getAllTemps (tigerassem.LABEL _, s) = s
             | getAllTemps (tigerassem.OPER {src=sc, dst=ds,...}, s) = addList(s,sc@ds)
             | getAllTemps (tigerassem.MOVE {src=sc, dst=ds,...}, s) = addList(s,[sc,ds])
