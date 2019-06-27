@@ -61,6 +61,16 @@ fun main(args) =
         (* canonProcs : (stm list, frame) list; por cada funcion en el codigo fuente obtenemos un (tigertree.stm list,frame)  *)
         val canonProcs = List.mapPartial canonizeProcs fragmentos   (* List.mapPartial doesn't save NONE results, and unpacks SOME x into x. Like List.map o List.filter *)
         val canonStrings = List.mapPartial canonizeStrings fragmentos
+
+        val _ =
+            if canon
+            then print(tigertrans.Ir(
+                    List.concat(List.map
+                    (fn (bodies,frm) =>
+                        List.map (fn b=>PROC {body=b,frame=frm}) bodies)
+                    canonProcs
+                )))
+            else ()
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
