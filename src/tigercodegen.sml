@@ -115,10 +115,10 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                         dst = [], 
                         jump = NONE}) 
                     else
-                        emit(OPER{assem = "ADD `d0, x0, `s0\n", 
-                        src = [munchExp e2], 
-                        dst = [t1], 
-                        jump = NONE}) 
+                        emit(MOVE{assem = "ADD `d0, x0, `s0\n", 
+                        src = munchExp e2, 
+                        dst = t1}
+                        ) 
 
               (* CHECK: call podria pisar t1 *)
               | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "CALL "^n^"\n", (* page 204. CHECK. *)
