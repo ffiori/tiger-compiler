@@ -177,7 +177,7 @@ let
     fun alojar [] = [] (* Crea una lista de operaciones que van alojando las expresiones de los fields *)
        |alojar ((f,n)::fs) = (MOVE(MEM(BINOP(PLUS,TEMP r,CONST (n*wSz))), unEx f))::(alojar fs)
 in
-    Ex (ESEQ(seq ([MOVE(TEMP tsz, CONST ((List.length l)*wSz)),
+    Ex (ESEQ(seq ([MOVE(TEMP tsz, CONST (List.length l)),
                    EXP(externalCall("_allocRecord",[TEMP tsz])),  (* Alojo espacio para el record *)
                    MOVE(TEMP r, TEMP rv)] @ (alojar l)),
              TEMP r))
