@@ -127,11 +127,11 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                                  jump = NONE})
               | EXP (TEMP t) => () (* TODO: que significa esto? *)
               | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
-              | JUMP (NAME n, l) => emit (OPER{ assem = "J "^n^"\n",
+              | JUMP (NAME n, l) => emit (OPER{ assem = "J `j0\n",
                                                  src = [],
                                                  dst = [],
                                                  jump = SOME l})
-              | CJUMP(oper,e1,e2,t,f) => ( emit (OPER{ assem = (get_relop_assem oper)^", "^t^"\n",
+              | CJUMP(oper,e1,e2,t,f) => ( emit (OPER{ assem = (get_relop_assem oper)^", `j0\n",
                                                  src = [munchExp e1, munchExp e2],
                                                  dst = [],
                                                  jump = SOME [t,f]})) (* por canon este cjump tiene a continuacion el label f *)
