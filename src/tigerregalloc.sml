@@ -6,22 +6,17 @@ open Splayset
 
 type allocation = (tigertemp.temp, tigerframe.register) dict
 
+val INF =
+    case Int.maxInt of
+        SOME x => x-10
+        | _ => 1123456789
+        
 (* Tries to delete element from set. Returns same set if element is not in set. *)
 fun safeDelete(set,element) = (delete(set,element) handle _ => set)
-(*
-fun safeDelete(set,element) = if member(set,element) then delete(set,element) else set
-*)
 
 (* Tries to find the value for given key in map. If key is not in map,
- * it inserts it in the map and returns default_value. *)
-(* TODO does it make sense to insert it even if we don't return the map? doesn't it get lost? *)
-fun safeFind(map,key,default_value) = (Splaymap.find(map,key) handle _ => (Splaymap.insert(map,key,default_value);default_value))
-(*
-fun safeFind(map,key,default_value) =
-	case Splaymap.peek(map,key) of
-		SOME value => value
-		| NONE => (Splaymap.insert(map,key,default_value); default_value)
-*)
+ * it returns default_value. *)
+fun safeFind(map,key,default_value) = (Splaymap.find(map,key) handle _ => default_value)
 
 (************************ Interference Graph *************************)
 fun stringPairCompare ((s1,s2),(t1,t2)) =
@@ -67,9 +62,12 @@ fun printIgraphEdges() =
     in print("\n") end
 
 fun printIgraph() = printIgraphList() (*; printIgraphEdges() *)
-
 (********************** End Interference Graph ***********************)
+
+(* Nodes that already have a color (machine registers) *)
 val precolored : ((tigertemp.temp) set) ref = ref (Splayset.addList((Splayset.empty String.compare), tigerframe.specialregs @ tigerframe.usable_register_list) ) (* It should never be changed*)
+
+(* Nodes that need coloring *)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) 
 
 val simplifyWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
@@ -95,7 +93,6 @@ val moveList_default_value = empty(tigerassem.compare)
 val alias : ((tigertemp.temp, tigertemp.temp) dict) ref = ref (mkDict(String.compare))
 
 val color : ((tigertemp.temp, tigerframe.register) dict) ref = ref (mkDict(String.compare)) (* mapea temporales a registros posta *)
-
 
 fun addEdge (u,v) =
     if u<>v andalso not (member(!adjSet,(u,v)))
@@ -231,7 +228,6 @@ fun combine(u,v) =
         val _ = if (safeFind(!degree, u, degree_default_value)>=tigerframe.usable_registers) andalso member(!freezeWorklist,u) 
                 then (freezeWorklist := delete(!freezeWorklist,u); spillWorklist := add(!spillWorklist,u) )
                 else ()
-    
     in
         ()
     end  
@@ -239,9 +235,9 @@ fun combine(u,v) =
 fun coalesce() =
     let
         val m = first_element (!worklistMoves)
-        val (x,y) =  (*x es src, y es dst*)
+        val (x,y) =  (*x es dst, y es src*)
             case m of
-                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
+                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias dst, getAlias src)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
         val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
         val _ = if !debug then print("Attempting to coalesce move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
@@ -273,20 +269,21 @@ fun coalesce() =
             combine(u,v);
             addWorklist(u)
         )
-        else (activeMoves := add(!activeMoves,m);  print(" Move not ready for coalescing \n"))
+        else activeMoves := add(!activeMoves,m)
 
     end
 
 fun freezeMoves(u) =
     let fun freeze_single_move m =
             let val (x,y) = case m of
-                                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
+                                tigerassem.MOVE {assem=assem, dst=dst, src=src} => (dst, src)
                                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
                 val v = if (getAlias y = getAlias u) then getAlias x else getAlias y
-                val _ = if !debug then  print("Freezing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
+                val _ = if !debug then print("Freezing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
                 val _ = activeMoves := safeDelete(!activeMoves,m)
                 val _ = frozenMoves := add(!frozenMoves,m)
-                val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso (safeFind(!degree, v, degree_default_value) < tigerframe.usable_registers))
+                val _ = if (Splayset.isEmpty(nodeMoves(v)) andalso
+                            (safeFind(!degree, v, degree_default_value) < tigerframe.usable_registers))
                         then (freezeWorklist := safeDelete(!freezeWorklist,v); simplifyWorklist := add(!simplifyWorklist,v))
                         else ()
             in
@@ -336,13 +333,10 @@ fun assignColors() =
                     val okColors = ref ( addList(empty(String.compare),tigerframe.usable_register_list) )
 
                     val _ = Splayset.app
-                            (fn w => if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
-                                    then 
-                                        (
-                                        print("okcolors tiene "^tigerpp.ppint(numItems (!okColors))^"\n");
-                                        okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
-                                        )
-                                    else () )
+                            (fn w => 
+                                if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
+                                then okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
+                                else () )
                             (safeFind(!adjList, n, adjList_default_value))
                     
                     val _ = 
@@ -471,7 +465,6 @@ fun rewriteProgram(frm,body) =
 
 fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  = 
     let
-
         (* Declare and initialize  *)
 
         val _ = simplifyWorklist := empty(String.compare)
@@ -500,7 +493,10 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
 
         val _ =  Splayset.app (fn pn => color := insert(!color,pn,pn)) (!precolored)
 
-        val _ = degree:= mkDict(String.compare)
+        val _ = degree := mkDict(String.compare)
+        (* Patch to avoid considering precolored nodes for assignColors *)
+        val _ = app (fn reg=>degree := insert(!degree, reg, INF)) (!precolored)
+        
         (* Calculate flow graph and then do liveness analysis *)
 
         val _ = if !debug then  (print("\n*******************************************************************************\n");
@@ -523,10 +519,9 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
         
         (* 
          val _ = print("LIVENESS ANALYSIS: \n ")
-        val _ = List.app (fn n=>(print("Node "^tigergraph.nodename(n)^": "); List.app (fn t=>print(t^" ")) (liveout n); print("\n"))) fnode_list
+         val _ = List.app (fn n=>(print("Node "^tigergraph.nodename(n)^": "); List.app (fn t=>print(t^" ")) (liveout n); print("\n"))) fnode_list
         *)
-        
-        
+
         (**************** build() (as in the book) ********************)
         fun processInstruction (instr,fnode) =
             let
@@ -565,7 +560,6 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
         val _ = List.app processInstruction ((List.rev o ListPair.zip) (List.mapPartial filterLabel body, fnode_list))
 
         val _ = if !debug then printIgraph() else ()
-
         (************************ build() end *************************)
         
         val _ = makeWorklist()

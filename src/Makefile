@@ -88,8 +88,7 @@ tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo
 tigertrans.uo: tigertrans.ui tigertree.uo tigerpila.ui tigerframe.ui \
     tigerit.uo tigertemp.ui tigerabs.uo 
 tigerframe.ui: tigertree.uo tigerassem.uo tigertemp.ui 
-tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo \
-    tigermuestratipos.ui 
+tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo 
 tigerregalloc.ui: tigerframe.ui tigerassem.uo tigertemp.ui 
 tigerinterp.uo: tigertree.uo tigertab.ui tigerframe.ui tigerit.uo \
     tigertemp.ui 
