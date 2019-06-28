@@ -11,9 +11,12 @@ open tigerliveness
 open tigersimpleregalloc
 open BasicIO Nonstdio
 
+fun printErr(s: string) =
+    (output (std_err, s); flush_out std_err)
+
 fun lexstream(is: instream) =
     Lexing.createLexer(fn b => fn n => buff_input is b 0 n);
-fun errParsing(lbuf) = (print("Error en parsing!("
+fun errParsing(lbuf) = (printErr("Error en parsing!("
     ^(makestring(!num_linea))^
     ")["^(Lexing.getLexeme lbuf)^"]\n"); raise Fail "Parse error")
 fun main(args) =
@@ -107,19 +110,27 @@ fun main(args) =
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
         val functions_code = List.map procesarBody canonProcs
         
-        val out_file = TextIO.openOut "prog.s"
-            handle _ => raise Fail "[tigermain] Problema abriendo prog.s"
-        fun print_asm txt = TextIO.output(out_file, txt)
+        (* ({prolog,body,epilog}, allocation) list -> (label:string, string:string) -> string -> string -> () *)
+        fun create_elf(code, strings, asmfile, elffile) = let
+            val out_file = TextIO.openOut asmfile
+                handle _ => raise Fail ("[tigermain] Problema abriendo "^asmfile)
+            fun print_asm txt = TextIO.output(out_file, txt)
 
-        val _ = print_asm ".data\n"
-        val _ = List.app (print_asm o tigercodegen.codestring) canonStrings
+            val _ = print_asm ".data\n"
+            val _ = List.app (print_asm o tigercodegen.codestring) strings
 
-        val _ = print_asm "\n.text\n"
-        val _ = tigerassem.mapAssem print_asm functions_code
-       	
-        val _ = TextIO.closeOut out_file
+            val _ = print_asm "\n.text\n"
+            val _ = tigerassem.mapAssem print_asm code
+            
+            val _ = TextIO.closeOut out_file
+
+            val gcc_out = Process.system("riscv64-linux-gcc -static runtime.c "^asmfile^" -o "^elffile)
+            val _ = if not(Process.isSuccess(gcc_out)) then
+                raise Fail "problem running gcc" else ()
+        in () end
     in
-        print "# Success\n"
-    end handle Fail s => print("Fail: "^s)
+        create_elf(functions_code, canonStrings, "prog.s", "a.out");
+        print "Success\n"
+    end handle Fail s => printErr("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
