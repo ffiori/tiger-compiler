@@ -1,0 +1,8 @@
+(let
+ var c := 7
+ function aaa () =
+  for r:=9 to 9 do
+    (printInt(c);
+     aaa())
+in aaa() end;
+0)

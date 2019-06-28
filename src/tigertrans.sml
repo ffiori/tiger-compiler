@@ -23,7 +23,7 @@ fun newLevel{parent={parent, frame, level}, name, formals} =
     {
     parent=SOME frame,
     frame=newFrame{name=name, formals=formals},
-    level=level}
+    level=level+1}
 fun allocArg{parent, frame, level} b = tigerframe.allocArg frame b
 fun allocLocal{parent, frame, level} b = tigerframe.allocLocal frame b
 fun formals{parent, frame, level} = tigerframe.formals frame
