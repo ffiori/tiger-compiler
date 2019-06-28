@@ -114,7 +114,7 @@ void _checkIndexArray(uint64_t *a, uint64_t i)
 {
 	if(i<0 || i>=a[-1]) {
 		fprintf(stderr, "indice %ld excedido!\n", i);
-		exit(-1);
+		_Exit(-1);
 	}
 }
 uint64_t *_allocRecord(uint64_t ctos, ...)
@@ -132,7 +132,7 @@ void _checkNil(uint64_t* r)
 {
 	if(r==0) {
 		fprintf(stderr, "Nil!\n");
-		exit(-1);
+		_Exit(-1);
 	}
 }
 uint64_t _stringCompare(string *s, string *t)
@@ -167,7 +167,7 @@ string *chr(uint64_t i)
 {
     if (i < 0 || i >= 256) {
 		printf("chr(%ld) out of range\n", i);
-		exit(1);
+		_Exit(1);
     }
     return (string*)(consts + i);
 }
@@ -179,7 +179,7 @@ string *substring(string *s, uint64_t first, uint64_t n)
 {
     if (first < 0 || first + n > s->length) {
 		printf("substring([%ld],%ld,%ld) out of range\n", s->length, first, n);
-		exit(1);
+		_Exit(1);
     }
     if (n == 1)
 		return (string*)(consts + s->chars[first]);
