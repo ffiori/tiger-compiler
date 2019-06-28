@@ -217,6 +217,7 @@ fun conservative node_set =
 
 fun combine(u,v) = 
     let 
+        val _ = if !debug then print("Combining "^u^" and "^v^"\n") else ()
         val _ = if member(!freezeWorklist,v) 
                 then freezeWorklist:=delete(!freezeWorklist,v)
                 else spillWorklist :=delete(!spillWorklist,v)
@@ -243,7 +244,7 @@ fun coalesce() =
                 tigerassem.MOVE {assem=assem, dst=dst, src=src} => (getAlias src, getAlias dst)
                 | _ => raise Fail "[coalesce] instruction not MOVE in worklistMoves\n"
         val (u,v) = if member(!precolored,y) then (y,x) else (x,y)
-        val _ = if !debug then print("Coalescing move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
+        val _ = if !debug then print("Attempting to coalesce move "^x^" -> "^y^", whose aliases are "^u^" and "^v^"\n") else ()
         val _ = worklistMoves := safeDelete(!worklistMoves,m)
         
         fun bigCondition() =
@@ -272,7 +273,8 @@ fun coalesce() =
             combine(u,v);
             addWorklist(u)
         )
-        else (activeMoves := add(!activeMoves,m))
+        else (activeMoves := add(!activeMoves,m);  print(" Move not ready for coalescing \n"))
+
     end
 
 fun freezeMoves(u) =
