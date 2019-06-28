@@ -43,8 +43,8 @@ val specialregs = [ra, fp, sp, zero]
 val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
 val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
 val calleesaves = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"] (* TODO: borre s9-11 para simpleregallog *)
-val usable_registers = 27   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 val usable_register_list = argregs @ callersaves @ calleesaves
+val usable_registers = List.length usable_register_list   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 (* COLORTEST please leave this here temporarily, regalloc testing
 val usable_registers = 2   (* All registers (32) except fp, sp, zero, gp, tp. Appel names this as K. *)
 val usable_register_list = List.take(argregs @ callersaves @ calleesaves,usable_registers)

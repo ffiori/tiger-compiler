@@ -69,7 +69,7 @@ fun printIgraphEdges() =
 fun printIgraph() = printIgraphList() (*; printIgraphEdges() *)
 
 (********************** End Interference Graph ***********************)
-val precolored : ((tigertemp.temp) set) ref = ref (Splayset.addList((Splayset.empty String.compare), tigerframe.usable_register_list) ) (* It should never be changed*)
+val precolored : ((tigertemp.temp) set) ref = ref (Splayset.addList((Splayset.empty String.compare), tigerframe.specialregs @ tigerframe.usable_register_list) ) (* It should never be changed*)
 val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare)) 
 
 val simplifyWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
@@ -325,7 +325,9 @@ fun selectSpill() =
 fun assignColors() = 
     let
         val _ = if !debug then  print("[Coloreo]ASSIGNING COLORS...\n") else ()
-        fun while_body() = 
+        val spilled = ref false
+        
+        fun while_body() =
             if (List.length(!selectStack)>0) 
             then
                 let
@@ -335,43 +337,56 @@ fun assignColors() =
 
                     val _ = Splayset.app
                             (fn w => if (member(!precolored,getAlias(w)) orelse member(!coloredNodes,getAlias(w)))
-                                    then okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
+                                    then 
+                                        (
+                                        print("okcolors tiene "^tigerpp.ppint(numItems (!okColors))^"\n");
+                                        okColors := safeDelete(!okColors,Splaymap.find(!color, getAlias(w)))
+                                        )
                                     else () )
                             (safeFind(!adjList, n, adjList_default_value))
-
-                    val _ = if (Splayset.isEmpty(!okColors))
-                            then (
-                                let
-                                    val _ = if !debug then print(":( node "^n^" turned out to be an actual spill  \n") else ()
-                                    val _ = spilledNodes := add(!spilledNodes,n)
-                                in
-                                    ()
-                                end)
-                            else (
-                                let
-                                    val _ = coloredNodes := add(!coloredNodes,n)
-                                    val c = first_element(!okColors)
-                                    val _ = if !debug then  print("node "^n^" successfully assigned color "^c^"...\n") else ()
-                                    val _ = color := insert(!color,n,c)
-                                in 
-                                    ()
-                                end
-                            )
+                    
+                    val _ = 
+                        if (Splayset.isEmpty(!okColors))
+                        then (
+                            let
+                                val _ = if !debug then print(":( node "^n^" turned out to be an actual spill  \n") else ()
+                                val _ = spilledNodes := add(!spilledNodes,n)
+                            in
+                                spilled := true
+                            end)
+                        else (
+                            let
+                                val _ = coloredNodes := add(!coloredNodes,n)
+                                val c = first_element(!okColors)
+                                val _ = if !debug then print("node "^n^" successfully assigned color "^c^"...\n") else ()
+                                val _ = color := insert(!color,n,c)
+                            in 
+                                ()
+                            end
+                        )
                 in
                     while_body()
                 end
             else
                 ()
-
+            
         val _ = while_body() 
 
-
-        val _ = Splayset.app
+        val _ =
+            if (!spilled)
+            then ()
+            else
+                Splayset.app
                 (fn n => if member(!precolored,getAlias(n)) 
                          then color := insert(!color,n,getAlias(n))
-                         else color := insert(!color,n,Splaymap.find(!color, getAlias(n))))
+                         else( 
+                            (if !debug
+                            then print("node "^n^" with alias "^getAlias(n)^"...\n")
+                            else ()) 
+                            ; color := insert(!color,n,Splaymap.find(!color, getAlias(n))))
+                         )
                 (!coalescedNodes)
-        
+        val _ = if !debug then print("quitting assigncolors\n") else ()
     in
         ()  
     end
