@@ -82,24 +82,26 @@ fun main(args) =
                 val body_code = List.concat(map (fn b => tigercodegen.codegen frame b) bs) (* Puse concat para aplanarlo como lo hace Appel *)
                 val body_code_2 = procEntryExit2(frame,body_code)
                 
-                val (coalesced_code, temp2reg) = tigerregalloc.alloc frame body_code_2 colordebug (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for formatting function to write final asm file *)
+                val (coalesced_code, temp2regFun) = (* temp2reg is a Splaymap to map temporary registers to actual registers, useful for 'format' function to write final asm file *)
+                    if simplecolor
+                    then (simpleregalloc frame body_code_2, (fn x=>x))
+                    else 
+                        let val (code, temp2reg) = tigerregalloc.alloc frame body_code_2 colordebug
+                            val _ =
+                                if colordebug 
+                                then
+                                    let val _ = print("COLOREO FINAL \n")
+                                        val _ =
+                                            Splaymap.app
+                                            (fn (temp,reg) => (print(temp^": "^reg^"\n")))
+                                            temp2reg
+                                    in () end
+                        else () 
+                        in (code, (fn t=>Splaymap.find(temp2reg,t))) end
                 
-                val _ = if (colordebug) 
-                        then
-                            let val _ = print("COLOREO FINAL \n")
-                                val _ =
-                                Splaymap.app
-                                (fn (temp,reg) => (print(temp^": "^reg^"\n")))
-                                (temp2reg)
-                            in () end
-                        else ()
-
-                val code_with_regs = simpleregalloc frame body_code_2 (*DEBUGGING*)
-                
-                val body_code_3 = procEntryExit3(frame,code_with_regs)
-                fun temp2regFun t = Splaymap.find(temp2reg,t)
+                val body_code_3 = procEntryExit3(frame, coalesced_code)
             in 
-                ( body_code_3, if simplecolor then (fn x=>x) else temp2regFun )
+                ( body_code_3, temp2regFun )
             end
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
