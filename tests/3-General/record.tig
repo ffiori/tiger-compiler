@@ -1,0 +1,12 @@
+(let
+
+ type any = {any : int}
+
+ function llenar (any : any) =
+    ( any.any := 1337; () )
+
+ var any := any{any=0}
+
+in ( llenar(any);
+     printInt(any.any))
+end; 0)

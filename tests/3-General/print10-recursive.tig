@@ -1,0 +1,9 @@
+/* define a recursive function */
+let
+  function fact (n : int) = (
+    if  n <> 0      
+      then (printInt(n); fact(n-1); printInt(n))
+  )
+in (
+  fact (10)
+; 0 ) end

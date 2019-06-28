@@ -1,0 +1,19 @@
+let
+    type intArray = array of int
+    var row := intArray [ 4 ] of 0
+    function oper(i: int) : int = (
+      printInt(100+i);
+      if i > 0 then
+        (row[i]:=i;
+        oper(i-1);
+        printInt(200+i);
+        0)
+      else 0 )
+    in oper(3); 
+       printInt(row[0]);
+       printInt(row[1]);
+       printInt(row[2]);
+       printInt(row[3]);
+       printInt(row[4]); /* should fail */
+       0
+end
