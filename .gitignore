@@ -11,3 +11,4 @@ errlist
 *.o
 prog.s
 a.out
+*.output
