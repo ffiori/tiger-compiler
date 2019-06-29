@@ -220,7 +220,7 @@ fun callExp (name,extern:bool,isproc:bool,lev:level,ls:exp list) =
                        )
                        ls
 
-        val ta = List.rev (List.map (fn (a,b) => a) locAndci)
+        val ta = List.map (fn (a,b) => a) locAndci
         val ci = List.concat (List.map (fn (a,b) => b) locAndci)
         val args = if extern then ta else fp_loc::ta (* extern functions do not require static link *)
     in

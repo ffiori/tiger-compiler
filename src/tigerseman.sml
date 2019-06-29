@@ -359,7 +359,7 @@ fun transExp(venv, tenv) =
                             val _ = pushLevel level
 
                             val venv'' =
-                                List.foldr
+                                List.foldl
                                 (fn ({name,escape,typ},env) =>
                                     tabRInserta(name, Var {ty = transTy(tenv,typ,pos),
                                                            access = tigertrans.allocArg (topLevel()) (!escape),
