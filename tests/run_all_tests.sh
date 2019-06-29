@@ -15,9 +15,11 @@ fi
 echo "Running all tests..."
 
 for file in "$TEST_FOLDER"/*; do
-  printf "$file ---> "
-  ANS=$(../src/tiger "$file" | tail -$VERBOSITY)
-  echo ${ANS}  
+  if [[ $file == *.txt ]]; then
+	  printf "$file ---> "
+	  ANS=$(../src/tiger "$file" | tail -$VERBOSITY)
+	  echo ${ANS}  
+  fi
 done
 
 

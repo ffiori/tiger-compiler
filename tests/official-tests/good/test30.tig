@@ -4,7 +4,7 @@ let
   type a = array of int
   type b = a
 
-  var arr1 : a := b [10] of 0
+  var arr1 : a := b [10] of 77
 in
-  arr1[2]
+  (printInt(arr1[2]);0) /*77*/
 end

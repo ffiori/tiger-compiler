@@ -17,6 +17,7 @@ let
 in
   arr1[0] := 1;
   arr1[9] := 3;
+  printInt(arr1[9]);  /*3*/
   arr2[3].name := "kati";
   arr2[1].age := 23;
   arr3[34] := "sfd";

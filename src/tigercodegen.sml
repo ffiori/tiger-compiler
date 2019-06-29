@@ -126,7 +126,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                                  dst = callersaves @ argregs,
                                                  jump = NONE})
               | EXP (TEMP t) => () (* TODO: que significa esto? *)
-              | EXP _ => raise Fail ("[munchStm] EXP siempre deberia estar compuesto con CALL ") (* because of canonization *)
+              | EXP _ => () (* TODO: CHECK *)
               | JUMP (NAME n, l) => emit (OPER{ assem = "J `j0\n",
                                                  src = [],
                                                  dst = [],

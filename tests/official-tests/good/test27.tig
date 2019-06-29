@@ -4,5 +4,5 @@ let
 
 	function g (a : int) : int = a 
 in
- g (2)
+ (printInt(g (2));0) /*prints 2*/
 end
