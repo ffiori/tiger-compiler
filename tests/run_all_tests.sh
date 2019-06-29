@@ -5,7 +5,7 @@ TEST_FOLDER="$2"
 SIMPLE="$3"
 
 if ! [ "$#" -gt 1 ] ||  ! [ -d "$2" ] ; then
-  echo "Usage: $0 SIM_FOLDER TEST_FOLDER [-simple]" >&2
+  echo "Usage: $0 SIMULATOR_PATH TEST_FOLDER [-simple]" >&2
   exit 1
 fi
 
