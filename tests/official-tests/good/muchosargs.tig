@@ -1,0 +1,15 @@
+let
+  type intArray = array of int
+
+  var arr1 := intArray [ 6 ] of 7
+  var arr2 := intArray [ 6 ] of 1
+
+  function no_soy_conmutativa (a1:int,a2:string,a3:int,a4:intArray,a5:int,a6:int,a7:int,a8:intArray,a9:int,a10:intArray,a11:int) : int =
+    -(a1*a3+a4[1]*a10[4]-a11)
+
+in
+
+  
+
+  printInt(no_soy_conmutativa(-6,"hey",3,arr1,0,2,3,arr2,0,arr2,2));0 /* Should print -(-18+7-2) = 9  */
+end
