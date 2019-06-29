@@ -68,8 +68,8 @@ fun errorNoLine(s) = raise Fail ("Error: "^s^"\n")
  * al que tipan los dos. *)
 fun cmpTipo(TNil, (TRecord r), _) = (TRecord r)
   | cmpTipo((TRecord r), TNil, _) = (TRecord r)
-  | cmpTipo((TInt RO), (TInt RW), _) = (TInt RO) (* TODO FEFO: check *)
-  | cmpTipo((TInt RW), (TInt RO), _) = (TInt RO) (* TODO FEFO: check *)
+  | cmpTipo((TInt RO), (TInt RW), _) = (TInt RO) 
+  | cmpTipo((TInt RW), (TInt RO), _) = (TInt RO) 
   | cmpTipo(t1, t2, nl) = if tiposIguales t1 t2
                           then t1
                           else error("Tipos distintos en cmpTipo!",nl)
@@ -305,7 +305,6 @@ fun transExp(venv, tenv) =
                 val exp' = varDec(acc,exp)
             in transDec(venv',tenv,exp'::el,ts) end
 
-        (* TODO: No estariamos guardando el codigo intermedio de los bodies en ningun lado!! A donde va?*)
         | transDec (venv,tenv,el,(FunctionDec lf)::ts) = (* lf = lista de funciones, es un batch de declaraciones de funciones *)
             let
                 (* 1 - chequear si hay nombres duplicados en este batch *)

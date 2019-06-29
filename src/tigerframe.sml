@@ -23,7 +23,7 @@ type level = int
 (* Ver pág 260 ! Explica un toque todo lo que se define acá. *)
 datatype access = InFrame of int | InReg of tigertemp.label
 
-(* TODO: PAG 208 *)
+(*PAG 208 *)
 
 fun ppint x = tigerpp.ppint x
 

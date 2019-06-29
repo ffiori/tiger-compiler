@@ -169,7 +169,6 @@ in
                      BINOP(MUL, TEMP ri, CONST tigerframe.wSz)))))
 end
 
-(*fun recordExp [] = (* caso {} vale! *)  TODO  *)
 fun recordExp l = (* l es (exp * int) list *) (* pág 175 o 164 *)
 let
     val tsz = newtemp()

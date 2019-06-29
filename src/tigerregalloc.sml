@@ -308,7 +308,7 @@ fun freeze() =
 
 fun selectSpill() = 
     let
-        fun heuristic ls = first_element (!ls) (* TODO: Algo mas inteligente (O NO) *)
+        fun heuristic ls = first_element (!ls) (* POSIBLE OPTIMIZACION: Algo mas inteligente (O NO) *)
         val m = heuristic spillWorklist
         val _ = if !debug then  print("Spilling node "^m^"\n") else ()
         val _ = spillWorklist := safeDelete(!spillWorklist,m)

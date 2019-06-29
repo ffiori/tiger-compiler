@@ -18,7 +18,7 @@ fun codestring (lab, str) =
     ".size " ^ lab ^ ", " ^ ppint (len + 8) ^ "\n"^
     lab ^ ":\n"^
     "\t.dword " ^ ppint len ^ "\n"^
-    "\t.ascii \"" ^ str ^ "\"\n" (* TODO revisar escape de comillas *)
+    "\t.ascii \"" ^ str ^ "\"\n"
   end
 
 fun codegen frame stm = (*se aplica a cada funcion*)
@@ -77,7 +77,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
             | _ => raise Fail ("[safeMunchStm] unknown thing")
 
         (* munchStm : tigertree.stm -> unit *)            
-        and munchStm s = (*TODO*)
+        and munchStm s =
             case s of 
                SEQ (a,b) => (munchStm a; munchStm b) (*204*)
               |tigertree.LABEL l  => emit(LABEL{ assem=l^":\n", lab=l })
@@ -156,7 +156,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
 
       (* munchEXP and muncStm will produce tigerassem.Assem instructions as side effects *)
       (* munchExp : tigertree.exp -> tigertree.temp; returns the temporary in which the result is held *)
-      and munchExp e =  (*TODO p. 204 205*)   
+      and munchExp e =  (*p. 204 205*)   
         case e of
           (TEMP t) => t
           | (CONST i) =>

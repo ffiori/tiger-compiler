@@ -397,5 +397,5 @@ struct
 			in
 				rv
 			end
-	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end (* TODO Agregar el cero?*)
+	in (print("Comienzo de ejecución...\n"); evalFun("_tigermain", []); print("Fin de ejecución.\n")) end (* Agregar el cero?*)
 end
