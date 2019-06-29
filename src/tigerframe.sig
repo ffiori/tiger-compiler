@@ -16,6 +16,7 @@ val string : tigertemp.label * string -> string
 val formals : frame -> access list
 val allocArg : frame -> bool -> access
 val allocLocal : frame -> bool -> access
+val allocCallArgs : frame -> int -> unit
 val maxRegFrame : frame -> int
 val wSz : int
 val log2WSz : int

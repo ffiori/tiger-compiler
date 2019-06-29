@@ -122,7 +122,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
 
               (* CHECK: call podria pisar t1 *)
               | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "CALL "^n^"\n", (* page 204. CHECK. *)
-                                                 src = munchArgs(args),
+                                                 src = munchArgs args frame,
                                                  dst = callersaves @ argregs,
                                                  jump = NONE})
               | EXP (TEMP t) => () (* TODO: que significa esto? *)
@@ -237,12 +237,20 @@ fun codegen frame stm = (*se aplica a cada funcion*)
            know that something happens to them here
            *)
 
-        and munchArgs(args) = let
+        and munchArgs args frame = let
+          (* Destinations on registers *)
           val argregs = List.map TEMP tigerframe.argregs
-          val expreg = ListPair.zip (argregs, args) (* TODO: cuando no entran *)
+          (* Destinations on stack *)
+          val stackregqty = Int.max(0, (List.length args) - (List.length argregs))
+          val _ = tigerframe.allocCallArgs frame stackregqty
+          fun argpos x = MEM(BINOP(PLUS, TEMP tigerframe.sp, CONST (x * tigerframe.wSz)))
+          val stackpos = List.tabulate(stackregqty, argpos)
+          (* now move args -> [regs, stack] *)
+          val expreg = ListPair.zip (argregs @ stackpos, args)
           val _ = List.app (munchStm o tigertree.MOVE) expreg
-          val regs = List.map (#1) expreg
-        in List.take (tigerframe.argregs, (List.length regs)) end
+          (* now calculate effectively used regs to return for CALL to use *)
+          val regsusedqty = Int.min(List.length tigerframe.argregs, List.length args)
+        in List.take (tigerframe.argregs, regsusedqty) end
             
     in
         munchStm stm ; rev(!ilist)

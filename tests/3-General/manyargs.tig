@@ -1,0 +1,30 @@
+let
+ function printint (i : int) =
+   let function f (i : int) =
+        if i > 0
+	then (f (i/10); print (chr (i-i/10*10+ord ("0"))))
+   in if i < 0 then (print ("-"); f (-i))
+      else if i>0 then f (i)
+      else print ("0")
+   end
+
+ function printmany (a1: int, a2: int, a3: int, a4: int,
+   a5: int, a6: int, a7: int, st0: int, st1: int,
+   st2: int, st3: int, st4: int) : int = (if st4 <> 0 then (
+    print("a1: "); printint(a1); print("\n");
+    print("a2: "); printint(a2); print("\n");
+    print("a3: "); printint(a3); print("\n");
+    print("a4: "); printint(a4); print("\n");
+    print("a5: "); printint(a5); print("\n");
+    print("a6: "); printint(a6); print("\n");
+    print("a7: "); printint(a7); print("\n");
+    print("st0: "); printint(st0); print("\n");
+    print("st1: "); printint(st1); print("\n");
+    print("st2: "); printint(st2); print("\n");
+    print("st3: "); printint(st3); print("\n");
+    print("st4: "); printint(st4); print("\n"); /* for x:= 0 to 10000000 do (x;()); */
+    printmany(a1, a2, a3, a4, a5, a6, a7, st0, st1, st2, st3, st4-1))
+   else 0)
+
+in printmany(1,2,3,4,5,6,7,100,101,102,103,104)
+end

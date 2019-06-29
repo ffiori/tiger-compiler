@@ -2,12 +2,14 @@
     Frames para riscv (sin registers).
 
 0xffff  
-        |    ...     |  s0+8  | 40(sp)
+        |    ...     |  s0+16 |
+        |   arg 10   |  s0+8  | 48(sp)
+        |   arg 9    |  s0    | 40(sp)
         --------------  s0
-        |   fp ant   |  s0    | 32(sp)
-        | stat link  |  s0-8  | 24(sp)
-        |   return   |  s0-16 | 16(sp)
-        |  local 1   |  s0-24 |  8(sp)
+        |   fp ant   |  s0-8  | 32(sp)
+        | stat link  |  s0-16 | 24(sp)
+        |   return   |  s0-24 | 16(sp)
+        |  local 1   |  s0-32 |  8(sp)
         |  local 2   |  sp
         |    ...     |
 0x0
@@ -34,11 +36,14 @@ val ra = "ra"               (* return address *)
 val zero = "x0"
 val wSz = 8                 (* word size in bytes *)
 val log2WSz = 3             (* base two logarithm of word size in bytes *)
-val fpPrev = 0              (* offset (bytes) *)
-val fpPrevLev = ~wSz        (* offset (bytes) *)
+val fpPrev = ~wSz           (* offset (bytes) *)
+val fpPrevLev = ~2*wSz      (* offset (bytes) *)
+val raPrev = ~3*wSz         (* offset (bytes) *)
+val argsInicial = 0         (* bytes *)
+val argsOffInicial = 0      (* bytes *)
 val regInicial = 1          (* reg *)
 val localsInicial = 0       (* words *)
-val localsGap = ~3*wSz      (* bytes *)
+val localsGap = ~4*wSz      (* bytes *)
 val specialregs = [ra, fp, sp, zero]
 val argregs = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"]
 val callersaves = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
@@ -55,6 +60,7 @@ type frame = {
     name: string,
     formals: bool list,
     locals: bool list,
+    actualArg: int ref,
     actualLocal: int ref,
     actualReg: int ref,
     actualArgsLocation : (access list) ref
@@ -69,6 +75,7 @@ fun newFrame{name, formals} = {
     name=name,
     formals=formals,
     locals=[],
+    actualArg=ref argsInicial,
     actualLocal=ref localsInicial,
     actualReg=ref regInicial,
     actualArgsLocation = ref accessListInicial
@@ -96,6 +103,12 @@ fun allocArg (f: frame) escape =
         val _ = a := (!a) @ [r]
     in r end
 
+fun allocCallArgs (f: frame) qty =
+    let val current = !(#actualArg f)
+        val reqsz = qty * wSz
+        val updated = Int.max(reqsz, current)
+    in  #actualArg f:=updated end
+
 fun exp (InFrame k) fp = MEM(BINOP(PLUS, fp, CONST k))
     | exp (InReg l) fp = TEMP l
 
@@ -107,13 +120,17 @@ fun seqStm [] = raise Fail "seq vacio!"
     | seqStm (x::xs) = tigertree.SEQ (x, seqStm xs)
 
 fun procEntryExit1 (frame:frame,body) = let 
+    val argQty = List.length (!(#actualArgsLocation frame))
     val argsTemps = List.map TEMP argregs
     val CStemps = List.map (fn r => (TEMP (tigertemp.newtemp()), TEMP(r))) calleesaves
     val argsExps = List.map (fn x => exp x (TEMP fp)) (!(#actualArgsLocation frame))
 
+    val argsStackQty = Int.max(0, argQty - List.length argregs)
+    val argsStack = List.tabulate(argsStackQty, (fn x => exp (InFrame (x*wSz)) (TEMP fp)))
+
     val saveCS = List.map MOVE CStemps
     val restoreCS = List.map (MOVE o (fn (t, r) => (r, t))) CStemps
-    val moveArgs = List.map MOVE (ListPair.zip (argsExps, argsTemps))
+    val moveArgs = List.map MOVE (ListPair.zip (argsExps, argsTemps @ argsStack))
 in
     seqStm (saveCS @ moveArgs @ [body] @ restoreCS)  (*COLORTEST: Make this only body*)
 end
@@ -127,11 +144,11 @@ fun procEntryExit2 (frame,body) = body @
 
 fun procEntryExit3 (frame: frame, body) = 
 let val name = #name frame
-    val spOffset = (!(#actualLocal frame) + localsGap)
+    val spOffset = (!(#actualLocal frame) - !(#actualArg frame) + localsGap)
     val spOffsetA = spOffset - (16 - (~spOffset) mod 16) mod 16
-    val save_s0_off = ~spOffsetA - wSz
-    val save_a0_off = ~spOffsetA - 2 * wSz
-    val save_ra_off = ~spOffsetA - 3 * wSz
+    val save_s0_off = ~spOffsetA + fpPrev
+    val save_a0_off = ~spOffsetA + fpPrevLev
+    val save_ra_off = ~spOffsetA + raPrev
 in {
     prolog = "# PROCEDURE " ^ name ^ "\n"^
              "\t.align 2\n"^
@@ -142,7 +159,7 @@ in {
              "\tsd s0, " ^ ppint save_s0_off ^ "(sp)\n"^
              "\tsd a0, " ^ ppint save_a0_off ^ "(sp)\n"^
              "\tsd ra, " ^ ppint save_ra_off ^ "(sp)\n"^
-             "\taddi s0, sp, " ^ ppint save_s0_off ^ "\n",
+             "\taddi s0, sp, " ^ ppint (~spOffsetA) ^ "\n",
     body = body,
     epilog = "\tld ra, " ^ ppint save_ra_off ^ "(sp)\n"^
              "\tld s0, " ^ ppint save_s0_off ^ "(sp)\n"^
