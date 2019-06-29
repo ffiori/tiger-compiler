@@ -1,8 +1,8 @@
 (let
  var c := 7
- function aaa () =
+ function aaa (n:int) =
   for r:=9 to 9 do
-    (printInt(c);
-     aaa())
-in aaa() end;
+    (printInt(n);
+     aaa(n+1))
+in aaa(0) end;
 0)

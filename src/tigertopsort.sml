@@ -51,7 +51,7 @@ fun genPares lt =
 	let
 		val lrecs = buscaArrRecords lt
 		fun genP [] res = res
-		| genP ({name, ty=NameTy s'}::t) res = (print("NameTy "^s'^"\n"); genP t ((s', name)::res)   )
+		| genP ({name, ty=NameTy s'}::t) res = genP t ((s', name)::res)
 		| genP ({name, ty=ArrayTy s'}::t) res = genP t ((s', name)::res)
 		| genP ({name, ty=RecordTy lf}::t) res = genP t res
 	in	genP lt [] end
