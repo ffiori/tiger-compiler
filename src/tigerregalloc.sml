@@ -314,7 +314,6 @@ fun selectSpill() =
         val _ = spillWorklist := safeDelete(!spillWorklist,m)
         val _ = simplifyWorklist := add(!simplifyWorklist,m)
         val _ = freezeMoves(m)
-
     in
         ()
     end
@@ -593,17 +592,23 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
         val answer =
             if Splayset.numItems(!spilledNodes) <> 0
             then 
-                let val _ = if !debug then  print("[Coloreo] Your program has to be rewritten :( \n\n") else ()
+                let val _ = if !debug then print("[Coloreo] Your program has to be rewritten :( \n\n") else ()
                     val body = rewriteProgram(frm,body)
                     val body = allocAux frm body 
                 in
                     body
                 end
             else body
-    in
-        answer
-    end
+        
+        fun isNOP (tigerassem.LABEL _) = false
+          | isNOP (tigerassem.MOVE{src=src,dst=dst,...}) =
+                safeFind(!color,src,src) = safeFind(!color,dst,dst)
+          | isNOP (tigerassem.OPER _) = false
 
+        val short_answer = List.filter (not o isNOP) answer
+    in
+        short_answer
+    end
 
 fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) debug_flag = 
     let 
@@ -618,4 +623,3 @@ fun alloc (frm : tigerframe.frame) (body : tigerassem.instr list) debug_flag =
         (allocAux frm body,!color) 
     end
 end
-
