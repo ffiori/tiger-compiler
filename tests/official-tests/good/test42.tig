@@ -17,12 +17,13 @@ let
 in
   arr1[0] := 1;
   arr1[9] := 3;
-  printInt(arr1[9]);  /*3*/
   arr2[3].name := "kati";
   arr2[1].age := 23;
   arr3[34] := "sfd";
 
   rec1.name := "sdf";
   rec2.dates[0] := 2323;
-  rec2.dates[2] := 2323; 0
+  rec2.dates[2] := 2323;
+  printInt(arr1[3*arr1[9]]+rec2.dates[0]-rec2.dates[2]);  /*3*/
+  0
 end

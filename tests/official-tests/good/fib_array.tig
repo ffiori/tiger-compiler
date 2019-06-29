@@ -1,0 +1,21 @@
+let
+  var N :=26
+  type intArray = array of int
+  var fibArray := intArray [ 100 ] of 0
+
+  function fillFib(a:int) = (
+    fibArray[0]:=1;
+    fibArray[1]:=1;
+    fillFibRecursively(2,a)
+  )
+
+  function fillFibRecursively(a:int, n:int) = (
+     if (a<=n) 
+     then (fibArray[a]:= fibArray[a - 1] + fibArray[a - 2];fillFibRecursively(a+1,n))
+     else ()
+  )
+
+in
+  
+  fillFib(26);printInt(fibArray[25]);0 /*Should print 121393*/
+end
