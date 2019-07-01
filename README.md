@@ -17,11 +17,10 @@ sure it is available on the system `PATH`
 
     $ export PATH="/path/to/toolchain/bin:$PATH"
 
-You can use the compiler to generate RISC-V assembler and then use gcc
-to assemble it and link it into an ELF binary.
+You can use the compiler to generate RISC-V assembler. It will then use
+`riscv64-linux-gcc` to assemble it and link it into an ELF binary.
 
     $ ./tiger program.tig
-    $ riscv64-linux-gcc prog.s runtime.c -static
 
 To run this program without a RISC-V system running a GNU/Linux system,
 you can use [rv8](https://rv8.io/) (see "Building rv8" for build and
