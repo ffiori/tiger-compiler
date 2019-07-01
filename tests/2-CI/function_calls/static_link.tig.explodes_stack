@@ -4,5 +4,5 @@
   for r:=9 to 9 do
     (printInt(n);
      aaa(n+1))
-in aaa(0) end;
+in aaa(0) end; /*0*/
 0)

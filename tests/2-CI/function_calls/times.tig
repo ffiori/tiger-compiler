@@ -1,4 +1,4 @@
-let 
+let
 
 	function times(x : int, y:int) : int = (
 		let var ans: int := 0
@@ -8,6 +8,6 @@ let
 
 
 in
-	times(4,3)
+	printInt(times(4,3));0 /*12*/
 end
 

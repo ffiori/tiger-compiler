@@ -15,6 +15,6 @@ let
 		end)
 
 in
-	power(2,7)
+	printInt(power(2,10));0 /*1024*/
 end
 
