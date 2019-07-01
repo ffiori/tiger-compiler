@@ -175,6 +175,8 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                                             dst=[r], 
                                             src=[], 
                                             jump=NONE}))
+          | (BINOP(MINUS, e1, CONST i)) =>
+            munchExp (BINOP(PLUS, e1, CONST (~i)))
           | (BINOP(b, CONST i, e1)) =>
             if valid_imm i andalso binop_supports_imm b then
             result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^ppint i^"\n", 
