@@ -159,6 +159,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
       and munchExp e =  (*p. 204 205*)   
         case e of
           (TEMP t) => t
+          | (CONST 0) => zero
           | (CONST i) =>
             result (fn r => emit(OPER{assem="LI `d0, "^ppint i^"\n",
                                       dst=[r], 

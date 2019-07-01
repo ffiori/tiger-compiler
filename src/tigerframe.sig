@@ -7,6 +7,7 @@ val rv : tigertemp.temp
 val ra : tigertemp.temp
 val fp : tigertemp.temp
 val sp : tigertemp.temp
+val zero : tigertemp.temp
 datatype access = InFrame of int | InReg of tigertemp.label
 val fpPrev : int
 val fpPrevLev : int
