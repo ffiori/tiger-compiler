@@ -1,0 +1,23 @@
+let
+
+ type BR = {a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int,
+            s0: int, s1: int, s2: int, s3: int, s4: int, s5: int, s6: int}
+ var tmp := BR{a1=1, a2=2, a3=3, a4=4, a5=5, a6=6, a7=7,
+               s0=100, s1=101, s2=102, s3=103, s4=104, s5=105, s6=106}
+
+in (printInt(tmp.a1);
+    printInt(tmp.a2);
+    printInt(tmp.a3);
+    printInt(tmp.a4);
+    printInt(tmp.a5);
+    printInt(tmp.a6);
+    printInt(tmp.a7);
+    printInt(tmp.s0);
+    printInt(tmp.s1);
+    printInt(tmp.s2);
+    printInt(tmp.s3);
+    printInt(tmp.s4);
+    printInt(tmp.s5);
+    printInt(tmp.s6);
+    0)
+end
