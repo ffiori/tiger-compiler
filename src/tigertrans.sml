@@ -173,12 +173,12 @@ fun recordExp l = (* l es (exp * int) list *) (* pág 175 o 164 *)
 let
     val tsz = newtemp()
     val r = newtemp()
-    fun alojar [] = [] (* Crea una lista de operaciones que van alojando las expresiones de los fields *)
-       |alojar ((f,n)::fs) = (MOVE(MEM(BINOP(PLUS,TEMP r,CONST (n*wSz))), unEx f))::(alojar fs)
+    val ordered = Listsort.sort (fn ((_,a),(_,b)) => Int.compare(a,b)) l
+    val values = List.map (unEx o #1) ordered
 in
     Ex (ESEQ(seq ([MOVE(TEMP tsz, CONST (List.length l)),
-                   EXP(externalCall("_allocRecord",[TEMP tsz])),  (* Alojo espacio para el record *)
-                   MOVE(TEMP r, TEMP rv)] @ (alojar l)),
+                   EXP(externalCall("_allocRecord",[TEMP tsz] @ values)),  (* Alojo espacio para el record y copia los valores *)
+                   MOVE(TEMP r, TEMP rv)]),
              TEMP r))
 end
 
