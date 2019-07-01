@@ -355,8 +355,6 @@ fun binOpIntExp {left, oper, right} =
 fun binOpIntRelExp {left,oper,right} =
     let val l = unEx left
         val r = unEx right
-        val rta = newtemp()
-        val (t,f) = (newlabel(),newlabel())
         val oper' = case oper of
                         EqOp => EQ
                        |NeqOp => NE
@@ -366,19 +364,13 @@ fun binOpIntRelExp {left,oper,right} =
                        |GeOp => GE
                        |_ => raise Fail "Operador raro rel..."
     in
-        Ex(ESEQ(seq[MOVE(TEMP rta,CONST 0),
-                    CJUMP(oper',l,r,t,f),
-                    LABEL t, MOVE(TEMP rta,CONST 1),
-                    LABEL f],
-                TEMP rta))
+        Cx(fn (t, f) => CJUMP(oper',l,r,t,f))
     end
 
 fun binOpStrExp {left,oper,right} =
     let
         val l = unEx left
         val r = unEx right
-        val (tl,tr,rta) = (newtemp(),newtemp(),newtemp())
-        val (t,f) = (newlabel(),newlabel())
         val oper' = case oper of
                         EqOp => EQ
                        |NeqOp => NE
@@ -388,14 +380,9 @@ fun binOpStrExp {left,oper,right} =
                        |GeOp => GE
                        |_ => raise Fail "Operador raro strrel..."
     in
-        Ex (ESEQ(seq [MOVE(TEMP tl,l),
-                      MOVE(TEMP tr,r),
-                      EXP(externalCall("_stringCompare", [TEMP tl, TEMP tr])),
-                      MOVE(TEMP rta,CONST 0),
-                      CJUMP(oper',TEMP rv,CONST 0,t,f),
-                      LABEL t, MOVE(TEMP rta,CONST 1),
-                      LABEL f],
-                 TEMP rta))
+        Cx (fn (t, f) => seq [
+            EXP(externalCall("_stringCompare", [l, r])),
+            CJUMP(oper',TEMP rv,CONST 0,t,f)])
     end
 
 end
