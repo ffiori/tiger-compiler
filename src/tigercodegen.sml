@@ -53,6 +53,14 @@ fun codegen frame stm = (*se aplica a cada funcion*)
           | DIV => false
           | _ => true
 
+        fun binop_commutes e = case e of
+            MINUS   => false
+          | DIV     => false
+          | LSHIFT  => false
+          | RSHIFT  => false
+          | ARSHIFT => false
+          | _       => true
+
         fun get_binop_code e i = case e of
             PLUS    => if (i) then "ADDI" else "ADD"
           | MINUS   => "SUB"
@@ -178,7 +186,7 @@ fun codegen frame stm = (*se aplica a cada funcion*)
           | (BINOP(MINUS, e1, CONST i)) =>
             munchExp (BINOP(PLUS, e1, CONST (~i)))
           | (BINOP(b, CONST i, e1)) =>
-            if valid_imm i andalso binop_supports_imm b then
+            if valid_imm i andalso binop_supports_imm b andalso binop_commutes b then
             result (fn r => emit(OPER{assem=(get_binop_code b true)^" `d0, `s0, "^ppint i^"\n", 
                                             dst=[r], 
                                             src=[munchExp e1], 
