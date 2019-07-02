@@ -147,7 +147,6 @@ let val name = #name frame
     val spOffset = (!(#actualLocal frame) - !(#actualArg frame) + localsGap)
     val spOffsetA = spOffset - (16 - (~spOffset) mod 16) mod 16
     val save_s0_off = ~spOffsetA + fpPrev
-    val save_a0_off = ~spOffsetA + fpPrevLev
     val save_ra_off = ~spOffsetA + raPrev
 in {
     prolog = "# PROCEDURE " ^ name ^ "\n"^
@@ -157,7 +156,6 @@ in {
              name^":\n"^
              "\taddi sp, sp, " ^ ppint spOffsetA ^ "\n"^
              "\tsd s0, " ^ ppint save_s0_off ^ "(sp)\n"^
-             "\tsd a0, " ^ ppint save_a0_off ^ "(sp)\n"^
              "\tsd ra, " ^ ppint save_ra_off ^ "(sp)\n"^
              "\taddi s0, sp, " ^ ppint (~spOffsetA) ^ "\n",
     body = body,
