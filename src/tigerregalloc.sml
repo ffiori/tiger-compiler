@@ -177,7 +177,7 @@ fun decrementDegree node =
 
 fun simplify() =
     let val n = first_element(!simplifyWorklist)
-        val _ = if !debug then print("Simplify.. Node "^n^"has been removed\n") else ()
+        val _ = if !debug then print("Simplify.. Node "^n^" has been removed\n") else ()
         val _ = simplifyWorklist := safeDelete(!simplifyWorklist, n)
         val _ = selectStack:= push(n, !selectStack)
         val _ = Splayset.app decrementDegree (adjacent(n))
@@ -342,7 +342,7 @@ fun assignColors() =
                         if (Splayset.isEmpty(!okColors))
                         then (
                             let
-                                val _ = if !debug then print(":( node "^n^" turned out to be an actual spill  \n") else ()
+                                val _ = if !debug then print(":( node "^n^" turned out to be an actual spill\n") else ()
                                 val _ = spilledNodes := add(!spilledNodes,n)
                             in
                                 spilled := true
