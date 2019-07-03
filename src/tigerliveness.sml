@@ -82,7 +82,7 @@ struct
             val _ =
                 List.app
                 (fn node => computeLivenessForNode(node))
-                (tigergraph.nodes(#control flow_graph))
+                (tigergraph.sortedNodes(#control flow_graph))
             
             fun compareSets(s1,s2) = tabEquals(s1,s2,(fn (x,y)=>x=y))
             

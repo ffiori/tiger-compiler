@@ -4,6 +4,7 @@ sig
     type node
     
     val nodes: graph -> node list
+    val sortedNodes: graph -> node list
     val succ: node -> node list
     val pred: node -> node list
     val adj: node -> node list (* adj(n) = succ(n) U pred(n) *)

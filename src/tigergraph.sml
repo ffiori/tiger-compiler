@@ -35,6 +35,35 @@ struct
         in f 0              
         end
 
+    fun size g = (* binary search for size/first unused node *)
+        let fun look(lo,hi) =
+                   (* i < lo indicates i in use
+                      i >= hi indicates i not in use *)
+                if lo=hi then lo
+                else let val m = (lo+hi) div 2
+                     in if isBogus(Dynarray.sub(g,m)) then look(lo,m) else look(m+1,hi)
+                     end
+        in look(0, 1 + Dynarray.bound g)
+        end
+
+    fun sortedNodes g = (* chap 17 toposort by dfs *)
+        let val N = size g
+            val mark = Dynarray.array (N, false)
+            val sorted = ref []
+            fun dfs i = if Dynarray.sub(mark, i) = false then
+                let
+                    val NODE node = Dynarray.sub(g,i)
+                    val _ = Dynarray.update(mark, i, true)
+                    val _ = List.app dfs ((#pred) node)
+                    val _ = sorted := (g,i)::(!sorted)
+                in () end else ()
+        in dfs(N-1);
+           if N <> List.length (!sorted) then
+             raise Fail "[sortedNodes] did not cover all the nodes\n"
+           else ();
+           !sorted
+        end
+
     fun succ(g,i) = 
         let val NODE{succ=s,...} = Dynarray.sub(g,i) 
         in map (augment g) s 
@@ -48,14 +77,9 @@ struct
     fun adj gi = pred gi @ succ gi
 
     fun newNode g = (* binary search for unused node *)
-        let fun look(lo,hi) =
-                   (* i < lo indicates i in use
-                      i >= hi indicates i not in use *)
-                if lo=hi then (Dynarray.update(g,lo,emptyNode); (g,lo))
-                else let val m = (lo+hi) div 2
-                     in if isBogus(Dynarray.sub(g,m)) then look(lo,m) else look(m+1,hi)
-                     end
-        in look(0, 1 + Dynarray.bound g)
+        let val sz = size g in
+            Dynarray.update(g,sz,emptyNode);
+            (g,sz)
         end
 
     exception GraphEdge
