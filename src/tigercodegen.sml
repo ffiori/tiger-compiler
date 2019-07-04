@@ -82,6 +82,10 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                           src = [munchExp e2,munchExp e1], 
                           dst = [], 
                           jump = NONE})
+            |  tigertree.MOVE(TEMP t1, e2) =>
+                emit(MOVE{assem = "ADD `d0, x0, `s0\n",
+                          src = munchExp e2,
+                          dst = t1})
             | _ => raise Fail ("[safeMunchStm] unknown thing")
 
         (* munchStm : tigertree.stm -> unit *)            
@@ -115,18 +119,15 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                   | _         =>  safeMunchStm s 
 
               )
+              |tigertree.MOVE(TEMP t1, CONST i) =>   (* Store in register: t1 <- i *)
+                    if valid_imm i then
+                    emit(OPER{assem = "LI `d0, "^ppint i^"\n",
+                              src = [],
+                              dst = [t1],
+                              jump = NONE})
+                    else safeMunchStm s
               |tigertree.MOVE(TEMP t1, e2) =>   (* Store in register: t1 <- e2 *)
-                    if (t1=tigerframe.sp orelse t1=tigerframe.fp)
-                    then
-                        emit(OPER{assem = "ADD "^t1^", x0, `s0\n", 
-                        src = [munchExp e2], 
-                        dst = [], 
-                        jump = NONE}) 
-                    else
-                        emit(MOVE{assem = "ADD `d0, x0, `s0\n", 
-                        src = munchExp e2, 
-                        dst = t1}
-                        ) 
+                    safeMunchStm s
 
               (* CHECK: call podria pisar t1 *)
               | EXP (CALL (NAME n,args)) => emit (OPER{ assem = "CALL "^n^"\n", (* page 204. CHECK. *)
