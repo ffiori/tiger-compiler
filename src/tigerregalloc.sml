@@ -64,6 +64,16 @@ fun printIgraphEdges() =
 fun printIgraph() = printIgraphList() (*; printIgraphEdges() *)
 (********************** End Interference Graph ***********************)
 
+val spillCostMap : ((tigertemp.temp, real) dict) ref = ref (mkDict(String.compare))
+fun spillCostCompare(t1,t2) = 
+	let 
+		val cost1 = safeFind(!spillCostMap, t1, Real.fromInt INF)
+		val cost2 = safeFind(!spillCostMap, t2, Real.fromInt INF)
+	in case Real.compare(cost1,cost2) of
+		EQUAL => String.compare(t1,t2)
+		| x => x
+	end
+
 (* Nodes that already have a color (machine registers) *)
 val precolored : ((tigertemp.temp) set) ref = ref (Splayset.addList((Splayset.empty String.compare), tigerframe.specialregs @ tigerframe.usable_register_list) ) (* It should never be changed*)
 
@@ -72,7 +82,7 @@ val initial : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 
 val simplifyWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val freezeWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* nodos de grado bajo, relacionados con moves. (candidatos a coalescer) *)
-val spillWorklist : ((tigertemp.temp) set) ref = ref (empty(String.compare)) (* nodos de grado alto *)
+val spillWorklist : ((tigertemp.temp) set) ref = ref (empty(spillCostCompare)) (* nodos de grado alto *)
 
 val spilledNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
 val coalescedNodes : ((tigertemp.temp) set) ref = ref (empty(String.compare))
@@ -177,9 +187,9 @@ fun decrementDegree node =
 
 fun simplify() =
     let val n = first_element(!simplifyWorklist)
-        val _ = if !debug then print("Simplify.. Node "^n^" has been removed\n") else ()
+        val _ = if !debug then print("Simplify.. Node "^n^" has been removed.\t simplifyWorklist size "^Int.toString(numItems(!simplifyWorklist))^"\n") else ()
         val _ = simplifyWorklist := safeDelete(!simplifyWorklist, n)
-        val _ = selectStack:= push(n, !selectStack)
+        val _ = selectStack := push(n, !selectStack)
         val _ = Splayset.app decrementDegree (adjacent(n))
     in () end
 
@@ -468,7 +478,7 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
 
         val _ = simplifyWorklist := empty(String.compare)
         val _ = freezeWorklist := empty(String.compare)
-        val _ = spillWorklist := empty(String.compare)
+        val _ = spillWorklist := empty(spillCostCompare)
         
         val _ = spilledNodes := empty(String.compare)
         val _ = coalescedNodes := empty(String.compare)
@@ -489,6 +499,8 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
         
         val _ = alias := mkDict(String.compare)
         val _ = color := mkDict(String.compare) (* mapea temporales a registros posta *)
+
+		val _ = spillCostMap := mkDict(String.compare)
 
         val _ =  Splayset.app (fn pn => color := insert(!color,pn,pn)) (!precolored)
 
@@ -531,6 +543,12 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
                 val use_set = ref (empty(String.compare))
                 val _ = use_set := addList(!use_set, tigertab.tabSaca(fnode,use))
                 
+                fun addTempCost t =
+						spillCostMap := Splaymap.insert(!spillCostMap, t, 1.0+safeFind(!spillCostMap,t,0.0))
+
+                val _ =	app	addTempCost	(!def_set)
+                val _ =	app	addTempCost	(!use_set)
+                
                 val _ = 
                     if tigertab.tabEsta(fnode,ismove) andalso tigertab.tabSaca(fnode,ismove) (* para que no explote, se puede emprolijar *)
                     then
@@ -550,13 +568,17 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
                 val _ = Splayset.app
                         (fn d => Splayset.app (fn l => addEdge(l,d)) (!live))
                         (!def_set)
-
             in () end
 
         fun  filterLabel (tigerassem.LABEL _) = NONE
             |filterLabel (inst) = SOME inst
 
         val _ = List.app processInstruction ((List.rev o ListPair.zip) (List.mapPartial filterLabel body, fnode_list))
+
+		val _ = spillCostMap :=
+			Splaymap.map
+			(fn (temp,cost) => cost / Real.fromInt(numItems(safeFind(!adjList,temp,adjList_default_value))) handle _ => cost)
+			(!spillCostMap)	
 
         val _ = if !debug then printIgraph() else ()
         (************************ build() end *************************)
