@@ -318,8 +318,17 @@ fun freeze() =
 
 fun selectSpill() = 
     let
-        fun heuristic ls = first_element (!ls) (* POSIBLE OPTIMIZACION: Algo mas inteligente (O NO) *)
-        val m = heuristic spillWorklist
+		(* Update spillCostMap so we have to rebuild spillWorklist to give it the actual order *)
+		val _ = spillCostMap :=
+			Splaymap.map
+			(fn (temp,cost) => cost / Real.fromInt(safeFind(!degree, temp, degree_default_value)) handle _ => cost)
+			(!spillCostMap)	
+		val _ = spillWorklist := addList(empty(spillCostCompare), listItems(!spillWorklist))
+		
+        fun heuristicSpillNode () = 
+			first_element (!spillWorklist)
+			
+        val m = heuristicSpillNode()
         val _ = if !debug then  print("Spilling node "^m^"\n") else ()
         val _ = spillWorklist := safeDelete(!spillWorklist,m)
         val _ = simplifyWorklist := add(!simplifyWorklist,m)
@@ -575,10 +584,12 @@ fun allocAux (frm : tigerframe.frame) (body : tigerassem.instr list)  =
 
         val _ = List.app processInstruction ((List.rev o ListPair.zip) (List.mapPartial filterLabel body, fnode_list))
 
+(*
 		val _ = spillCostMap :=
 			Splaymap.map
 			(fn (temp,cost) => cost / Real.fromInt(numItems(safeFind(!adjList,temp,adjList_default_value))) handle _ => cost)
 			(!spillCostMap)	
+*)
 
         val _ = if !debug then printIgraph() else ()
         (************************ build() end *************************)
