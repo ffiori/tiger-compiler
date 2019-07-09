@@ -1,0 +1,5 @@
+(
+if (if 123 then 1 else 0) then print("asd") else print("qwe");
+if (1336 | 1337) then print("\n good OR\n") else print("\n bad OR\n");
+99
+)
