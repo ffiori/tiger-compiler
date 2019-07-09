@@ -41,7 +41,7 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
         formals=[TString, TString], result=TString, extern=true}),
     ("not", Func{level=topLevel(), label="not",
         formals=[TInt RW], result=TInt RW, extern=true}),
-    ("exit", Func{level=topLevel(), label="_Exit",
+    ("exit", Func{level=topLevel(), label="exitProgram",
         formals=[TInt RW], result=TUnit, extern=true})
     ])
 

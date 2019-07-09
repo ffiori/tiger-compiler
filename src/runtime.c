@@ -56,9 +56,20 @@ const string consts[256] = {
 
 string empty = {0, ""};
 
+/**
+ * Flushes the output buffers and exits the program
+ *
+ * @param code The program exit code
+ */
+void exitProgram(int64_t code) {
+    fflush(stdout);
+    fflush(stderr);
+    _Exit(code);
+}
+
 #define fail_and_exit(...) do { \
     fprintf(stderr, "Fatal: " __VA_ARGS__); \
-    _Exit(EXIT_FAILURE); \
+    exitProgram(EXIT_FAILURE); \
 } while(0)
 
 /**
@@ -289,6 +300,6 @@ uint64_t _tigermain(uint64_t);
 
 int main() {
     uint64_t i = _tigermain(0 /* dummy static link */);
-    _Exit(i);
+    exitProgram(i);
     return EXIT_FAILURE; /* should never run */
 }
