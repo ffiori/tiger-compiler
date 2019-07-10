@@ -12,7 +12,7 @@ fun travVar env d s =
 	SimpleVar s =>
 		(case tabBusca(s, env) of
 		SOME (dd, b) => if d>dd then b:=true else ()
-		| NONE => raise Fail ("escape?? "^s^" inexist."))
+		| NONE => raise Fail ("escape var \""^s^"\" inexistente"))
 	| FieldVar(v, s) => travVar env d v
 	| SubscriptVar(v, e) =>
 		(travVar env d v; travExp env d e)

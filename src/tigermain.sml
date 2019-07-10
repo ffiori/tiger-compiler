@@ -11,8 +11,15 @@ open tigerliveness
 open tigersimpleregalloc
 open BasicIO Nonstdio
 
-fun printErr(s: string) =
-    (output (std_err, s); flush_out std_err)
+fun printErr(s: string) = let
+    val cross = "\226\157\140"
+    val fail = "\027[31m[" ^ cross ^ " FAIL]\027(B\027[m "
+    in (output (std_err, fail ^ s); flush_out std_err) end
+
+fun printSucc(s: string) = let
+    val check = "\226\156\133"
+    val pass = "\027[32m[" ^ check ^ " PASS]\027(B\027[m "
+    in print (pass ^ s) end
 
 fun lexstream(is: instream) =
     Lexing.createLexer(fn b => fn n => buff_input is b 0 n);
@@ -22,18 +29,16 @@ fun errParsing(lbuf) = (printErr("Error en parsing!("
 fun main(args) =
     let fun arg(l, s) =
             (List.exists (fn x => x=s) l, List.filter (fn x => x<>s) l)
-        val (arbol, l1)     = arg(args, "-arbol")
-        val (escapes, l2)   = arg(l1, "-escapes") 
-        val (ir, l3)        = arg(l2, "-ir") 
-        val (canon, l4)     = arg(l3, "-canon") 
-        val (code, l5)      = arg(l4, "-code") 
-        val (flow, l6)      = arg(l5, "-flow") 
-        val (inter, l7)     = arg(l6, "-inter")
-        val (simplecolor, l8)   = arg(l7, "-simple")
-        val (colordebug, l9)   = arg(l8, "-colordebug")
+        val (arbol, l1)         = arg(args, "-arbol")
+        val (escapes, l2)       = arg(l1, "-escapes")
+        val (ir, l3)            = arg(l2, "-ir")
+        val (canon, l4)         = arg(l3, "-canon")
+        val (inter, l5)         = arg(l4, "-inter")
+        val (simplecolor, l6)   = arg(l5, "-simple")
+        val (colordebug, l7)    = arg(l6, "-colordebug")
 
         val entrada =
-            case l9 of
+            case l7 of
             [n] => ((open_in n)
                     handle _ => raise Fail (n^" no existe!"))
             | [] => std_in
@@ -42,12 +47,13 @@ fun main(args) =
         (* 1 - APLICAR LEXER Y PARSER *)
         val lexbuf = lexstream entrada
         val expr = prog Tok lexbuf handle _ => errParsing lexbuf
-        val _ = print "Parsing completed\n"
+        val _ = if arbol then tigerpp.exprAst expr else ()
+        val _ = printSucc "Parsing completed\n"
 
         (* 2 - CALCULO DE ESCAPES*)
         val _ = findEscape(expr)
-        val _ = if arbol then tigerpp.exprAst expr else ()
-        val _ = print "Escapes completed\n"
+        val _ = if escapes then tigerpp.exprAst expr else ()
+        val _ = printSucc "Escapes completed\n"
 
         (* 3 - CHEQUEO DE TIPOS Y CALCULO DE CODIGO INTERMEDIO *)
         val _ = transProg(expr);
@@ -55,7 +61,7 @@ fun main(args) =
         (* Devuelve datosGlobs. Hay un fragmento (tigertree.stm , tigerframe.frame) por funcion,
            incluido main; Tambien hay un fragmento por string *)
         val _ = if ir then print(tigertrans.Ir(fragmentos)) else ()
-        val _ = print "Typechecking and IR complete\n"
+        val _ = printSucc "Typechecking and IR complete\n"
         
         (* 4- CANONIZACION *)
         val canonFunction = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize) (* : tigertree.stm -> tigertree.stm list *)
@@ -78,7 +84,7 @@ fun main(args) =
                     canonProcs
                 )))
             else ()
-        val _ = print "Canonization complete\n"
+        val _ = printSucc "Canonization complete\n"
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
@@ -112,7 +118,7 @@ fun main(args) =
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
         val functions_code = List.map procesarBody canonProcs
-        val _ = print "Register allocation complete\n"
+        val _ = printSucc "Register allocation complete\n"
         
         (* ({prolog,body,epilog}, allocation) list -> (label:string, string:string) -> string -> string -> () *)
         fun create_elf(code, strings, asmfile, elffile) = let
@@ -134,7 +140,7 @@ fun main(args) =
         in () end
     in
         create_elf(functions_code, canonStrings, "prog.s", "a.out");
-        print "Compilation finished successfully\n"
-    end handle Fail s => printErr("Fail: "^s^"\n")
+        printSucc "Compilation finished successfully\n"
+    end handle Fail s => printErr("Fatal: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
