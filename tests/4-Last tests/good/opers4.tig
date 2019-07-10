@@ -1,0 +1,8 @@
+let
+  var k:int :=0
+in
+	for i:=0 to 4 do
+	for j:=i to 4 do
+	printInt(j);
+	0
+end

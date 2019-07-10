@@ -1,0 +1,9 @@
+let
+  var k:int :=0
+in
+	for i:=(5-5) to (5+5) do
+	for j:=0 to (5+5) do
+	while (k<=i+j) do
+	  (printInt(j); break);
+	0
+end

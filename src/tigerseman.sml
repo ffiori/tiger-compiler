@@ -231,7 +231,8 @@ fun transExp(venv, tenv) =
             let
                 val {ty=tyhi,exp=ehi} = trexp hi
                 val {ty=tylo,exp=elo} = trexp lo
-                val _ = if cmpTipo(tyhi,tylo,nl) <> TInt RW then error("Tipo no entero en rango de for",nl) else ()
+                val _ = if (cmpTipo(tyhi,tylo,nl) <> TInt RW 
+                          andalso cmpTipo(tyhi,tylo,nl) <> TInt RO)then error("Tipo no entero en rango de for",nl) else ()
                 val varEntry = {ty=TInt RO, level=getActualLev(), access=allocLocal (topLevel()) escape}
                 val venv' = tabRInserta(var, Var varEntry, venv)
                 val _ = preWhileForExp()
