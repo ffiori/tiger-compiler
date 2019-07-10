@@ -37,25 +37,27 @@ fun main(args) =
             [n] => ((open_in n)
                     handle _ => raise Fail (n^" no existe!"))
             | [] => std_in
-            | _ => raise Fail "opcion dsconocida!\n"
+            | _ => raise Fail "opcion desconocida!\n"
 
         (* 1 - APLICAR LEXER Y PARSER *)
         val lexbuf = lexstream entrada
         val expr = prog Tok lexbuf handle _ => errParsing lexbuf
+        val _ = print "Parsing completed\n"
 
         (* 2 - CALCULO DE ESCAPES*)
         val _ = findEscape(expr)
         val _ = if arbol then tigerpp.exprAst expr else ()
+        val _ = print "Escapes completed\n"
 
         (* 3 - CHEQUEO DE TIPOS Y CALCULO DE CODIGO INTERMEDIO *)
         val _ = transProg(expr);
         val fragmentos : tigerframe.frag list = tigertrans.getResult()  
-            (* Devuelve datosGlobs. Hay un fragmento (tigertree.stm , tigerframe.frame) por funcion, incluido main;
-                                    Tambien hay un fragmento por string   *) 
+        (* Devuelve datosGlobs. Hay un fragmento (tigertree.stm , tigerframe.frame) por funcion,
+           incluido main; Tambien hay un fragmento por string *)
         val _ = if ir then print(tigertrans.Ir(fragmentos)) else ()
+        val _ = print "Typechecking and IR complete\n"
         
         (* 4- CANONIZACION *)
-
         val canonFunction = (tigercanon.traceSchedule o tigercanon.basicBlocks o tigercanon.linearize) (* : tigertree.stm -> tigertree.stm list *)
 
         fun canonizeProcs (PROC {body=body, frame=frame}) = SOME (canonFunction body, frame)
@@ -76,6 +78,7 @@ fun main(args) =
                     canonProcs
                 )))
             else ()
+        val _ = print "Canonization complete\n"
         
         val _ = if inter then tigerinterp.inter true canonProcs canonStrings else ()
 
@@ -109,6 +112,7 @@ fun main(args) =
 
         (* functions_code : ({prolog,body,epilog}, allocation) list *)
         val functions_code = List.map procesarBody canonProcs
+        val _ = print "Register allocation complete\n"
         
         (* ({prolog,body,epilog}, allocation) list -> (label:string, string:string) -> string -> string -> () *)
         fun create_elf(code, strings, asmfile, elffile) = let
@@ -130,7 +134,7 @@ fun main(args) =
         in () end
     in
         create_elf(functions_code, canonStrings, "prog.s", "a.out");
-        print "Success\n"
+        print "Compilation finished successfully\n"
     end handle Fail s => printErr("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())

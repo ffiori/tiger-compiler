@@ -415,7 +415,6 @@ fun transProg ex =
     let val main = LetExp({decs=[FunctionDec[({name="_tigermain", params=[], result=SOME "int", body=ex}, 0)]], body=UnitExp 0}, 0)
         (* val _ = ppvenv tab_vars *)
         (* val _ = pptenv tab_tipos *)
-        val _ = transExp(tab_vars, tab_tipos) main
-    in  print "# bien!\n" end
+    in transExp(tab_vars, tab_tipos) main; () end
 
 end
