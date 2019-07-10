@@ -57,7 +57,7 @@ struct
                     val _ = List.app dfs ((#pred) node)
                     val _ = sorted := (g,i)::(!sorted)
                 in () end else ()
-        in dfs(N-1);
+        in List.tabulate(N, (fn i => dfs(N-1-i)));
            if N <> List.length (!sorted) then
              raise Fail "[sortedNodes] did not cover all the nodes\n"
            else ();
