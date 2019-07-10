@@ -1,0 +1,15 @@
+(
+if ( (1<2) & (1<3) & (1<4) ) then print("Conjuncion anda bien...\n");
+if ( (2>10) | (2>15) | 4 ) then print("Disyuncion anda bien...\n");
+if ( 2>5 & 2<5 | 4=3 ) then print("Precendcia de & | anda mal...\n") else print("Precencia de and y or anda bien...\n");
+if ( "hola"="hola") then print("Strings se comparan bien...\n") else print("error.\n");
+if ( "hola"<>"hola") then print("error...\n") else print("distinto funciona bien p strings.\n");
+(let
+   var i : int := 0
+in
+   while 1 do
+      ( i:=i+1;
+        printInt(i)
+      ) 
+end);
+0)
