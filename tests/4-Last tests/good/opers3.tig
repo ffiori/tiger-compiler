@@ -1,9 +1,12 @@
-let
+(
+for i:=0 to 4 do
+for j:=0 to 4 do
+(let
   var k:int :=0
 in
-	for i:=(5-5) to (5+5) do
-	for j:=0 to (5+5) do
-	while (k<=i+j) do
-	  (printInt(j); break);
-	0
-end
+  while (k<=i+j) do
+     (printInt(j); k:=k+2)
+end;())
+
+;
+0)
