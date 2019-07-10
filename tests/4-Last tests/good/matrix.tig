@@ -1,0 +1,76 @@
+/* testing definitions... */
+let
+
+  type entero = int
+  type vector = array of entero
+  type matrix = array of vector
+
+  function print_vector(v : vector, n: int) =
+     for i:= 0 to (n-1) do
+	printInt(v[i])
+
+  function print_matrix(m : matrix, n1: int, n2: int) =
+     for i:= 0 to (n1-1) do
+            print_vector(m[i],n2)
+
+  function print_matrix_elementwise(m : matrix, n1: int, n2: int) =
+     for i:= 0 to (n1-1) do
+        for j:= 0 to (n2-1) do 
+            printInt(m[i][j])
+
+  function new_matrix(n1:int, n2:int) : matrix =
+    let 
+        var m : matrix := matrix[n1] of (vector[n2] of 0)
+    in
+        for i:= 0 to (n1-1) do
+          m[i] := vector[n2] of 0;
+        m
+    end
+
+  var m1 : matrix := new_matrix(2,3)
+  var m2 : matrix := new_matrix(2,3)
+  var sum : matrix := new_matrix(2,3)
+
+  function suma_matrix(m1 : matrix, m2:matrix, n1:int, n2:int) : matrix = 
+     let 
+        var suma : matrix := new_matrix(n1,n2)
+     in
+        for i:= 0 to (n1-1) do
+        for j:= 0 to (n2-1) do 
+            suma[i][j] := m1[i][j]+ m2[i][j];
+        suma
+     end
+
+  function suma_matrixv2(m1 : matrix, m2:matrix, sum:matrix, n1:int, n2:int) = 
+        for i:= 0 to (n1-1) do
+        for j:= 0 to (n2-1) do 
+            sum[i][j] := m1[i][j]+ m2[i][j]
+
+in
+  m1[0] := vector[3] of 1;
+  m1[1] := vector[3] of 2;
+  m2[0] := vector[3] of 3;
+  m2[1][2] := 4;
+
+  /*
+        1 1 1
+  m1 =  2 2 2
+
+  m2 =  3 3 3
+        0 0 4
+  */
+  print("m1\n");
+  print_matrix_elementwise(m1,2,3);
+  print("m2\n");
+  print_matrix_elementwise(m2,2,3);
+  print("m1+m2 v2\n");
+  suma_matrixv2(m1,m2,sum,2,3);
+  print_matrix_elementwise(sum,2,3);
+  print("m1+m2\n");
+  print_matrix_elementwise(suma_matrix(m1,m2,2,3),2,3);
+
+  /* 4 4 4 
+     2 2 6*/
+
+  0 /* Should print 3628800 */
+end

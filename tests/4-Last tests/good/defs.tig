@@ -1,0 +1,32 @@
+/* testing definitions... */
+let
+  function menos1 (n : int) : int =
+    n - 1
+  function zero () : int = 
+    0
+  function id (n : int) : int =
+    n
+  var uno : int := 1
+  type entero = int
+
+  function fact (n : entero) : entero =
+    if  (n = zero())
+      then uno
+      else (id(n) * fact (menos1(n)))
+
+  function fact_old (n : entero) : entero =
+    if  (n = zero())
+      then 1
+      else (n * fact_2 (n-1))
+
+  function fact2 (n : int) : int =
+    if  n = 0
+      then 1
+      else n * fact_old (n - 1)
+
+in
+  printInt(fact (10));
+  printInt(fact_old(10));
+  printInt(fact2(10));
+  0 /* Should print 3628800 */
+end
