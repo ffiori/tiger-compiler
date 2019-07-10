@@ -27,29 +27,39 @@ you can use [rv8](https://rv8.io/) (see "Building rv8" for build and
 installation instructions). To use without installing, you can use the
 scripts available in `bin/` in the rv8 repository.
 
-    $ bin/rv8-sim a.out
+    $ bin/rv-sim a.out
 
-These scripts have a small bug, causing them not to pass the arguments
-to rv8. To fix it, you can apply the following patch.
+These scripts have some bugs, causing them not to pass the arguments
+to rv8 and to break due to relative path usage. To fix them, you can
+apply the following patch.
 
-    $ diff --git a/bin/rv-jit b/bin/rv-jit
-    index d45663e..acb0ad8 100755
+    diff --git a/bin/rv-jit b/bin/rv-jit
+    index d45663e9..6e61f681 100755
     --- a/bin/rv-jit
     +++ b/bin/rv-jit
-    @@ -3,4 +3,4 @@ OS=$(uname -s | sed 's/ /_/' | tr A-Z a-z)
+    @@ -1,6 +1,7 @@
+     #!/bin/sh
+    +BASEDIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+     OS=$(uname -s | sed 's/ /_/' | tr A-Z a-z)
      CPU=$(uname -m | sed 's/ /_/' | tr A-Z a-z)
-     test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=build/${OS}_${CPU}/lib
-     test "$OS" = "linux" &&  export LD_LIBRARY_PATH=build/${OS}_${CPU}/lib
+    -test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=build/${OS}_${CPU}/lib
+    -test "$OS" = "linux" &&  export LD_LIBRARY_PATH=build/${OS}_${CPU}/lib
     -exec build/${OS}_${CPU}/bin/rv-jit
-    +exec build/${OS}_${CPU}/bin/rv-jit "$@"
-    
-    $ diff --git a/bin/rv-sim b/bin/rv-sim
-    index d7f8f36..c16c3d5 100755
+    +test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=${BASEDIR}/build/${OS}_${CPU}/lib
+    +test "$OS" = "linux" &&  export LD_LIBRARY_PATH=${BASEDIR}/build/${OS}_${CPU}/lib
+    +exec ${BASEDIR}/build/${OS}_${CPU}/bin/rv-jit "$@"
+    diff --git a/bin/rv-sim b/bin/rv-sim
+    index d7f8f366..5411cf9b 100755
     --- a/bin/rv-sim
     +++ b/bin/rv-sim
-    @@ -3,4 +3,4 @@ OS=$(uname -s | sed 's/ /_/' | tr A-Z a-z)
+    @@ -1,6 +1,7 @@
+     #!/bin/sh
+    +BASEDIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+     OS=$(uname -s | sed 's/ /_/' | tr A-Z a-z)
      CPU=$(uname -m | sed 's/ /_/' | tr A-Z a-z)
-     test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=build/${OS}_${CPU}/lib
-     test "$OS" = "linux" &&  export LD_LIBRARY_PATH=build/${OS}_${CPU}/lib
+    -test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=build/${OS}_${CPU}/lib
+    -test "$OS" = "linux" &&  export LD_LIBRARY_PATH=build/${OS}_${CPU}/lib
     -exec build/${OS}_${CPU}/bin/rv-sim
-    +exec build/${OS}_${CPU}/bin/rv-sim "$@"
+    +test "$OS" = "darwin" &&  export DYLD_LIBRARY_PATH=${BASEDIR}/build/${OS}_${CPU}/lib
+    +test "$OS" = "linux" &&  export LD_LIBRARY_PATH=${BASEDIR}/build/${OS}_${CPU}/lib
+    +exec ${BASEDIR}/build/${OS}_${CPU}/bin/rv-sim "$@"

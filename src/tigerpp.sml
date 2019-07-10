@@ -30,7 +30,7 @@ fun ppexpr pps e0 =
 					add_string pps "],"; add_break pps (0, 1);
 					add_string pps ("result="^
 						(case result of SOME s => s | _ => "NONE"));
-					add_break pps (0, 0);
+					add_string pps ","; add_break pps (0, 0);
 					add_string pps "body="; ppe body;
 					add_string pps "}"; add_break pps (0, 0)))
 				flist;
