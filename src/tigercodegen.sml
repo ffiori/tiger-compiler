@@ -119,6 +119,10 @@ fun codegen frame stm = (*se aplica a cada funcion*)
                   | _         =>  safeMunchStm s 
 
               )
+              |tigertree.MOVE(TEMP t1, CONST 0) =>
+                    emit(MOVE{assem = "ADD `d0, x0, `s0\n",
+                              src = zero,
+                              dst = t1})
               |tigertree.MOVE(TEMP t1, CONST i) =>   (* Store in register: t1 <- i *)
                     if valid_imm i then
                     emit(OPER{assem = "LI `d0, "^ppint i^"\n",
