@@ -89,7 +89,11 @@ structure tigerassem = struct
         (f (#prolog w);
         showB f temp2reg (#body w);
         f (#epilog w))
-    and showB f temp2reg b =
-        List.app (fn w => f(format temp2reg w)) b
+    and showB f temp2reg b = case b of
+          nil => ()
+        | (O as OPER{jump=SOME [x],...}) :: (L as (LABEL{lab=y,...} :: rest)) =>
+            (if x<>y then f(format temp2reg O) else ();
+            showB f temp2reg L)
+        | w :: rest => (f(format temp2reg w); showB f temp2reg rest)
 
 end
