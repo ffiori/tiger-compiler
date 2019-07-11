@@ -1,0 +1,15 @@
+List elements, elementwise
+INT: 4
+INT: 3
+INT: 2
+INT: 1
+List elements, whole list 
+INT: 4
+INT: 3
+INT: 2
+INT: 1
+List elements after mapping plus1
+INT: 5
+INT: 4
+INT: 3
+INT: 2

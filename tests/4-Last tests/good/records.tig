@@ -1,0 +1,38 @@
+/* define valid recursive types */
+
+let
+  /* define a list */
+  type intlist = {hd : int, tl : intlist}
+
+  var l1 : intlist := intlist { hd = 1, tl = nil }
+  var l2 : intlist := intlist { hd = 2, tl = l1 }
+  var l3 : intlist := intlist { hd = 3, tl = l2 }
+  var l4 : intlist := intlist { hd = 4, tl = l3 }
+
+  function nth(n : int, list:intlist): int =
+        (
+		(while (n>0) do
+		   (list:=list.tl;n:=n-1));
+		list.hd
+	)
+
+  function printList(list:intlist) =
+	if (list<>nil) then (printInt(list.hd);printList(list.tl))
+
+  function plusOne(list:intlist) =
+	if (list<>nil) then (list.hd:= list.hd+1;plusOne(list.tl))
+in
+	print("List elements, elementwise\n");
+	printInt(nth(0,l4));
+	printInt(nth(1,l4));
+	printInt(nth(2,l4));
+	printInt(nth(3,l4)); 
+	print("List elements, whole list \n");
+        printList(l4);
+	print("List elements after mapping plus1\n");
+	plusOne(l4);
+	printList(l4);
+        0
+end
+
+
