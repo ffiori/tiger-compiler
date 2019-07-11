@@ -267,7 +267,7 @@ fun coalesce() =
     in
         if u=v
         then ((coalescedMoves := add(!coalescedMoves,m)); addWorklist(u))
-        else if member(!precolored,v) orelse member(!adjSet,(u,v))
+        else if member(!precolored,v) orelse member(!adjSet,(u,v)) orelse (List.exists (fn x=>x=u) tigerframe.specialregs)
         then (
             constrainedMoves := add(!constrainedMoves,m);
             addWorklist(u);
