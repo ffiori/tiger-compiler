@@ -11,10 +11,7 @@ reset=$(tput sgr0)
 BASEDIR="$(dirname "$(readlink -f "$0")")"
 
 function run_tiger () {
-    DIR="$PWD"
-    cd "$BASEDIR/../src/"
-    ./tiger "$@"
-    cd "$DIR"
+    "$BASEDIR/../src/tiger" "$@"
 }
 
 if ! [ "$#" -gt 1 ] ||  ! [ -d "$2" ] ; then
@@ -44,7 +41,7 @@ for file in "$TEST_FOLDER"/*; do
       run_tiger "$file" -simple > "$LOG_FILE"
     fi
 
-    script -c "$SIM_FOLDER $BASEDIR/../src/a.out" "$OUTPUT" > log.tmp
+    script -c "$SIM_FOLDER a.out" "$OUTPUT" > log.tmp
     sed -i '1d;$d' "$OUTPUT"
     sed -i '$d' "$OUTPUT"
 
@@ -60,4 +57,3 @@ for file in "$TEST_FOLDER"/*; do
     fi
   fi
 done
-

@@ -135,7 +135,10 @@ fun main(args) =
             
             val _ = TextIO.closeOut out_file
 
-            val gcc_out = Process.system("riscv64-linux-gcc -static runtime.c "^asmfile^" "^gccargs)
+            val tigerpath = Path.mkAbsolute{path=CommandLine.name(), relativeTo=OS.FileSys.getDir()}
+            val runtime = Path.concat (Path.dir tigerpath, "runtime.c")
+
+            val gcc_out = Process.system("riscv64-linux-gcc -static "^runtime^" "^asmfile^" "^gccargs)
             val _ = if not(Process.isSuccess(gcc_out)) then
                 raise Fail "problem running gcc" else ()
         in () end
