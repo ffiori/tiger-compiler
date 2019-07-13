@@ -38,12 +38,14 @@ fun main(args) =
         val (colordebug, l7)    = arg(l6, "-colordebug")
 
         val (files, otherargs) = List.partition (String.isSuffix ".tig") l7
-        val gccargs = String.concatWith " " otherargs
         val entrada = case files of
               [] => std_in
             | [name] => (open_in name
                         handle _ => raise Fail (name^" does not exist"))
             | _ => raise Fail "Multiple .tig files provided"
+
+        val gccargs = String.concatWith " " otherargs
+        val _ = if gccargs <> "" then print ("INFO: Using GCC arguments: "^gccargs^"\n") else ()
 
         (* 1 - APLICAR LEXER Y PARSER *)
         val lexbuf = lexstream entrada
