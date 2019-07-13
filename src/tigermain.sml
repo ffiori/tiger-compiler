@@ -37,12 +37,13 @@ fun main(args) =
         val (simplecolor, l6)   = arg(l5, "-simple")
         val (colordebug, l7)    = arg(l6, "-colordebug")
 
-        val entrada =
-            case l7 of
-            [n] => ((open_in n)
-                    handle _ => raise Fail (n^" no existe!"))
-            | [] => std_in
-            | _ => raise Fail "opcion desconocida!\n"
+        val (files, otherargs) = List.partition (String.isSuffix ".tig") l7
+        val gccargs = String.concatWith " " otherargs
+        val entrada = case files of
+              [] => std_in
+            | [name] => (open_in name
+                        handle _ => raise Fail (name^" does not exist"))
+            | _ => raise Fail "Multiple .tig files provided"
 
         (* 1 - APLICAR LEXER Y PARSER *)
         val lexbuf = lexstream entrada
@@ -121,7 +122,7 @@ fun main(args) =
         val _ = printSucc "Register allocation complete\n"
         
         (* ({prolog,body,epilog}, allocation) list -> (label:string, string:string) -> string -> string -> () *)
-        fun create_elf(code, strings, asmfile, elffile) = let
+        fun create_elf(code, strings, asmfile) = let
             val out_file = TextIO.openOut asmfile
                 handle _ => raise Fail ("[tigermain] Problema abriendo "^asmfile)
             fun print_asm txt = TextIO.output(out_file, txt)
@@ -134,12 +135,12 @@ fun main(args) =
             
             val _ = TextIO.closeOut out_file
 
-            val gcc_out = Process.system("riscv64-linux-gcc -static runtime.c "^asmfile^" -o "^elffile)
+            val gcc_out = Process.system("riscv64-linux-gcc -static runtime.c "^asmfile^" "^gccargs)
             val _ = if not(Process.isSuccess(gcc_out)) then
                 raise Fail "problem running gcc" else ()
         in () end
     in
-        create_elf(functions_code, canonStrings, "prog.s", "a.out");
+        create_elf(functions_code, canonStrings, "prog.s");
         printSucc "Compilation finished successfully\n"
     end handle Fail s => printErr("Fatal: "^s^"\n")
 
